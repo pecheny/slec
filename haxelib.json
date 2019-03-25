@@ -1,0 +1,15 @@
+{
+  "name": "entity",
+  "url": "https://github.com/pecheny/entity",
+  "license": "MIT",
+  "tags": [    ],
+  "description": "Basic entity-component implementation",
+  "version": "0.0.0-alpha",
+  "releasenote": "Initial release. ",
+  "classPath": "src",
+  "contributors": [
+    "pecheny"
+  ]
+
+}
+ 
