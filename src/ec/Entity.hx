@@ -1,10 +1,15 @@
 package ec;
+import Type;
+import ec.Component;
+import ec.macros.MacroUtils;
+#if macro
+import haxe.macro.Expr;
+#end
 class Entity {
     var children:Array<Entity> = [];
     public var parent(default, null):Entity;
 
-    public function new() {
-    }
+    public function new() {}
 
     @:access(Entity.parent)
     public function addChild(e:Entity) {
@@ -24,32 +29,73 @@ class Entity {
         children.remove(e);
     }
 
-    var components:Map<String, Component> = new Map();
+    var components:Map<String, Any> = new Map();
 
 
-    public function addComponent<T:Component>(c:T):T {
-        if (components.exists(c.type))
-            throw "Wrong";
-        components[c.type] = c;
-        c.entity = this;
+    /**
+    * (?) инлайнить ключ типа на основе получееного инстанса. макро метод, в котором нужно получить ссылку на имя типа.
+    * макро-функция получает экспрешн, поэтому функция должна быть не макро.
+    * или же аддЦомпонент тоже макро.
+**/
+
+    public function addComponentPrim<T>( c:T):T {
+        var id = getComponentId(c);
+        trace(id);
+        return addComponentInternal(id, c);
+//        var key = MacroUtils.getComponentId(c)
+
+    }
+    static function getComponentId(c:Dynamic):String {
+        var id = switch c {
+            case _ if (Std.is(c, Class)) :   Type.getClassName(c);
+            case _ if (Std.is(c, ICustomComponentId)) :  cast(c, ICustomComponentId).getId();
+            case _ :  Type.getClassName(Type.getClass(c));
+        }
+        return id;
+    }
+    public function addComponentInternal<T>(key:String, c:T):T {
+        if (components.exists(key))
+            throw 'Component $key already exists on this entity';
+        components[key] = c;
+//        c.entity = this;
         return c;
     }
 
-    public function removeComponent(type) {
-        if (!components.exists(type))
+    public function removeComponent<T>(cl:Class<T>) {
+        var id = getComponentId(cl);
+        if (!components.exists(id))
             throw "Wrong";
-        var c = components[type];
-        c.entity = null;
-        if (!components.remove(type))
+        var c = components[id];
+//        c.entity = null;
+        if (!components.remove(id))
             throw "Wrong";
     }
 
-    public function getComponent(type) {
-        if (components.exists(type))
-            return components[type];
-        if (parent != null)
-            return parent.getComponent(type);
-        return null;
+    public function getComponent<T>(cl:Class<T>):T {
+        return getComponentByName(cl, getComponentId (cl));
+
+//        trace("" + clexp);
+//        return macro cast $ethis.components["1"];
+//        if (components.exists(type))
+//            return components[type];
+//        if (parent != null)
+//            return parent.getComponent(type);
+//        return null;
+    }
+
+    public inline function getComponentByName<T>(cl:Class<T>, name:String):T {
+        var next = components.keys().next();
+        trace("'" + name  + "' '" + next  + "' " + (name == next));
+        trace("Name: " + name  + " " + components.exists(name)  + " " + next);
+        var c = components[name];
+//        if (Std.is(c, T))
+            return cast c;
+//        else
+//            throw "Wrong type of component " + c;
+    }
+
+    public function hasComponent<T>(cl:Class<T>):Bool {
+        return components.exists(getComponentId(cl));
     }
 
     public function getComponentSelf(type):Dynamic {
