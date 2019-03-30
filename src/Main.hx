@@ -1,26 +1,36 @@
 package ;
 import ec.Entity;
+import ec.IComponent;
 import ec.ICustomComponentId;
 class Main {
     public static function main() {
-        var e = new Entity();
-        e.addComponentPrim(new Cmp());
-        var c = e.getComponent(Cmp);
-        trace("_-^ " + c);
-        trace("\n\n arb");
+        trace(" arb");
         addRemoveCmpArb();
-        trace("\n\n cm");
+        trace("cm");
         addRemoveCmp();
-        trace("\n\n name");
+        trace("name");
         addRemoveCmpName();
+        trace("typedef: ");
+        addRemoveCmpTypedef();
+        trace('Total assertion ${failed + passed}, $failed failed');
     }
 
     static function addRemoveCmpArb() {
         var c = new Cmp();
         var e = new Entity();
-        e.addComponentPrim(c);
+        e.addComponent(c);
         var c2 = e.getComponent(Cmp);
-        trace("Component = " + c);
+        assert(e.hasComponent(Cmp), "has");
+        assert((c == c2), "eq");
+        e.removeComponent(Cmp);
+        assert((!e.hasComponent(Cmp)), "has not");
+    }
+
+    static function addRemoveCmpTypedef() {
+        var c = new CmpDef();
+        var e = new Entity();
+        e.addComponent(c);
+        var c2 = e.getComponent(CmpDef);
         assert(e.hasComponent(Cmp), "has");
         assert((c == c2), "eq");
         e.removeComponent(Cmp);
@@ -30,13 +40,13 @@ class Main {
     static function addRemoveCmp() {
         var c = new CmpWEnt();
         var e = new Entity();
-        e.addComponentPrim(c);
+        e.addComponent(c);
         var c2:CmpWEnt = e.getComponent(CmpWEnt);
-        trace("Component = " + c2);
         assert(e.hasComponent(CmpWEnt), "has");
         assert((c == c2), "eq");
         assert((c2.entity == e), "ent : " + c2.entity);
         e.removeComponent(CmpWEnt);
+        assert((c2.entity == null), "ent : " + c2.entity);
         assert((!e.hasComponent(CmpWEnt)), "has not");
     }
 
@@ -44,35 +54,40 @@ class Main {
         var name = "name";
         var c = new NamedCmp(name);
         var e = new Entity();
-        e.addComponentPrim(c);
-        var c2:NamedCmp = e.getComponentByName(NamedCmp, name);
-        trace("Component = " + c2);
-        assert(e.hasComponent(NamedCmp), "has / should fail");
+        e.addComponent(c);
+        var c2:NamedCmp = e.getComponentByName(name);
+        assert(!e.hasComponent(NamedCmp), "has no by type");
         assert((c == c2), "eq");
-//        assert((c2.entity == e), "ent");
-//        e.removeComponent(NamedCmp);
-        assert((!e.hasComponent(NamedCmp)), "has not");
+        e.removeComponentWithName(name);
+        assert((!e.hasComponentWithName(name)), "has not");
     }
 
+    static var failed:Int = 0;
+    static var passed:Int = 0;
+
     static function assert(value:Bool, warn:String) {
-        if (!value)
+        if (!value) {
             trace("Failed: " + warn);
-//        else
-//            trace("Passed: " + warn);
+            failed++;
+        } else {
+            passed++;
+        }
     }
 }
+
+typedef CmpDef = Cmp;
 class Cmp {
     public function new() {}
 }
 
-class CmpWEnt {// implements IComponent {
+class CmpWEnt implements IComponent {
     @:isVar public var entity(get, set):Entity;
 
-    function get_entity():Entity {
+    public function get_entity():Entity {
         return entity;
     }
 
-    function set_entity(value:Entity):Entity {
+    public function set_entity(value:Entity):Entity {
         return this.entity = value;
     }
 
