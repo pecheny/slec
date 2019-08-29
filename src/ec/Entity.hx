@@ -1,4 +1,5 @@
 package ec;
+import haxe.ds.ReadOnlyArray;
 import Type;
 class Entity {
     var children:Array<Entity> = [];
@@ -26,6 +27,9 @@ class Entity {
 
     var components:Map<String, Any> = new Map();
 
+    public inline function getChildren():ReadOnlyArray<Entity> {
+        return children;
+    }
 
     public function addComponent<T>(c:T):T {
         var id = getComponentId(c);
