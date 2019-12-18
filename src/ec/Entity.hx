@@ -85,6 +85,19 @@ class Entity {
         return components.exists(name);
     }
 
+    public function traverse(h:(Entity, Array<String>)->Void, path:Array<String>) {
+        h(this, path);
+        var id = "" +
+        if (parent != null)
+            parent.getChildren().indexOf(this)
+        else
+            -1;
+        path.push(id);
+        for (c in children)
+            h(c, path);
+        path.pop();
+    }
+
 }
 //@:allow(ec.Entity)
 //class Component {
