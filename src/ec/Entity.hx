@@ -4,6 +4,10 @@ import Type;
 class Entity {
     var children:Array<Entity> = [];
     public var parent(default, null):Entity;
+    /**
+    * The signal dispatches to entity and all their children hierarchy after it been added to parent
+**/
+    public var onContext(default, null):Signal<Entity->Void> = new Signal();
 
     public function new() {}
 
@@ -13,6 +17,13 @@ class Entity {
             e.parent.removeChild(e);
         e.parent = this;
         children.push(e);
+        e.dispatchContext(this);
+    }
+
+    public function dispatchContext(e:Entity){
+        onContext.dispatch(e);
+        for (ch in children)
+            ch.dispatchContext(e);
     }
 
     @:access(Entity.parent)
@@ -83,6 +94,14 @@ class Entity {
 
     public function hasComponentWithName(name) {
         return components.exists(name);
+    }
+
+    public function getComponentUpward<T>(cl:Class<T>){
+        if (hasComponent(cl))
+            return getComponent(cl);
+        if(parent == null)
+            return null;
+        return parent.getComponent(cl);
     }
 
     public function traverse(h:(Entity, Array<String>)->Void, path:Array<String>) {
