@@ -96,6 +96,10 @@ class Entity {
         return components.exists(name);
     }
 
+    public function getComponents():Array<String> {
+        return [for (k in components.keys()) k];
+    }
+
     public function getComponentUpward<T>(cl:Class<T>){
         if (hasComponent(cl))
             return getComponent(cl);
@@ -113,9 +117,17 @@ class Entity {
             -1;
         path.push(id);
         for (c in children)
-            h(c, path);
+            c.traverse(h, path);
         path.pop();
     }
+
+//    public function getOrCreate<T>(clazz:Class<T>) {
+//        var got = getComponent(clazz);
+//        if (got != null)
+//            return got;
+//        got = addComponent(new T());
+//        return got;
+//    }
 
 }
 //@:allow(ec.Entity)
