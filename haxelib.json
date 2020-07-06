@@ -1,8 +1,8 @@
 {
-  "name": "entity",
-  "url": "https://github.com/pecheny/entity",
+  "name": "slec",
+  "url": "https://github.com/pecheny/slec",
   "license": "MIT",
-  "tags": [    ],
+  "tags": [ "entity", "component", "service locator" ],
   "description": "Basic entity-component implementation",
   "version": "0.0.0-alpha",
   "releasenote": "Initial release. ",
