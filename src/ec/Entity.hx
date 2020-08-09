@@ -47,7 +47,7 @@ class Entity {
         return addComponentByName(id, c);
     }
 
-    static function getComponentId(c:Dynamic):String {
+    static public function getComponentId(c:Dynamic):String {
         var id = switch c {
             case _ if (Std.is(c, Class)) : Type.getClassName(c);
             case _ if (Std.is(c, ICustomComponentId)) : cast(c, ICustomComponentId).getId();
