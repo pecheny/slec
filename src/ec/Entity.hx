@@ -105,7 +105,7 @@ class Entity {
             return getComponent(cl);
         if(parent == null)
             return null;
-        return parent.getComponent(cl);
+        return parent.getComponentUpward(cl);
     }
 
     public function traverse(h:(Entity, Array<String>)->Void, path:Array<String>) {
