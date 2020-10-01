@@ -65,6 +65,10 @@ class Entity {
         return c;
     }
 
+    public function addComponentByType<T, Tc:T>(t:Class<T>, c:Tc):T {
+        return addComponentByName(getComponentId(t), c);
+    }
+
     public function removeComponentWithName(name:String) {
         if (!components.exists(name))
             throw "No component with name " + name;
