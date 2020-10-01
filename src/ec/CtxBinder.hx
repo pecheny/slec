@@ -3,7 +3,9 @@ class CtxBinder<T:CtxBindable> {
     var cl:Class<T>;
     var ctx:T;
     var entity:Entity;
-    public function new (cl:Class<T>, e:Entity) {
+    var upwardOnly:Bool;
+    public function new (cl:Class<T>, e:Entity, upwardOnly = false) {
+        this.upwardOnly = upwardOnly;
         this.cl = cl;
         this.entity = e;
         entity.onContext.listen(onContext);
@@ -12,7 +14,12 @@ class CtxBinder<T:CtxBindable> {
     function onContext(e:Entity) {
         if (ctx != null)
             ctx.unbind(entity);
-        ctx = entity.getComponentUpward(cl);
+        if (!upwardOnly)
+            ctx = entity.getComponentUpward(cl);
+        else if(entity.parent != null)
+            ctx = entity.parent.getComponentUpward(cl);
+        else
+            ctx = null;
         if (ctx == null) {
             return;
         }
