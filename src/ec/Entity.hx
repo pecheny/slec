@@ -13,6 +13,8 @@ class Entity {
 
     @:access(Entity.parent)
     public function addChild(e:Entity) {
+        if (this == e)
+            throw "You do not want add entity to themself as a child";
         if (e.parent != null)
             e.parent.removeChild(e);
         e.parent = this;
