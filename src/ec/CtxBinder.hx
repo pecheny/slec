@@ -5,10 +5,19 @@ class CtxBinder<T:CtxBindable> {
     var entity:Entity;
     var upwardOnly:Bool;
     public function new (cl:Class<T>, e:Entity, upwardOnly = false) {
+        var alias = getComponentName(cl);
+        if (e.hasComponentWithName(alias))
+            return;
+        e.addComponentByName(alias, this);
         this.upwardOnly = upwardOnly;
         this.cl = cl;
         this.entity = e;
         entity.onContext.listen(onContext);
+        onContext(e.parent);
+    }
+
+    function getComponentName(cl:Class<T>) {
+        return "ctxbinder_"+Entity.getComponentId(cl);
     }
 
     function onContext(e:Entity) {
