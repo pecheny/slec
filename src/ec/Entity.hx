@@ -36,6 +36,7 @@ class Entity {
             throw "Wrong";
         e.parent = null;
         children.remove(e);
+        e.dispatchContext(null);
     }
 
     var components:Map<String, Any> = new Map();
