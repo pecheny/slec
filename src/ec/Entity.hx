@@ -107,7 +107,7 @@ class Entity {
         return [for (k in components.keys()) k];
     }
 
-    public function getComponentUpward<T>(cl:Class<T>){
+    public function getComponentUpward<T>(cl:Class<T>):T{
         if (hasComponent(cl))
             return getComponent(cl);
         if(parent == null)
