@@ -45,6 +45,19 @@ class Entity {
         return children;
     }
 
+    public function getGrandchild(path:Array<Int>) {
+        var id = path.shift();
+        if (children.length > id) {
+            var next = children[id];
+            return
+                if (path.length > 0)
+                    next.getGrandchild(path)
+                else
+                    next;
+        }
+        return null;
+    }
+
     public function addComponent<T>(c:T):T {
         var id = getComponentId(c);
         return addComponentByName(id, c);
