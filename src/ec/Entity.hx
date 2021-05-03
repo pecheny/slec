@@ -7,7 +7,7 @@ class Entity {
     /**
     * The signal dispatches to entity and all their children hierarchy after it been added to parent
 **/
-    public var onContext(default, null):Signal<Entity->Void> = new Signal();
+    public var onContext(default, null):Signal<Entity -> Void> = new Signal();
 
     public function new() {}
 
@@ -22,7 +22,7 @@ class Entity {
         e.dispatchContext(this);
     }
 
-    public function dispatchContext(e:Entity){
+    public function dispatchContext(e:Entity) {
         onContext.dispatch(e);
         for (ch in children)
             ch.dispatchContext(e);
@@ -88,7 +88,7 @@ class Entity {
     }
 
     public function getComponent<T>(cl:Class<T>):T {
-        return cast getComponentByName( getComponentId(cl));
+        return cast getComponentByName(getComponentId(cl));
     }
 
     public inline function getComponentByName(name:String):Dynamic {
@@ -107,15 +107,15 @@ class Entity {
         return [for (k in components.keys()) k];
     }
 
-    public function getComponentUpward<T>(cl:Class<T>):T{
+    public function getComponentUpward<T>(cl:Class<T>):T {
         if (hasComponent(cl))
             return getComponent(cl);
-        if(parent == null)
+        if (parent == null)
             return null;
         return parent.getComponentUpward(cl);
     }
 
-    public function traverse(h:(Entity, Array<String>)->Void, path:Array<String>) {
+    public function traverse(h:(Entity, Array<String>) -> Void, path:Array<String>) {
         h(this, path);
         var id = "" +
         if (parent != null)
