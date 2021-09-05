@@ -128,6 +128,14 @@ class Entity {
         return parent.getComponentUpward(cl);
     }
 
+    public function getComponentByNameUpward(name):Dynamic {
+        if (hasComponentWithName(name))
+            return getComponentByName(name);
+        if (parent == null)
+            return null;
+        return parent.getComponentByNameUpward(name);
+    }
+
     public function traverse(h:(Entity, Array<String>) -> Void, path:Array<String>) {
         h(this, path);
         var id = "" +
