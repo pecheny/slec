@@ -6,8 +6,11 @@ class CtxBinder<T:CtxBindable> {
     var upwardOnly:Bool;
     public function new (cl:Class<T>, e:Entity, upwardOnly = false) {
         var alias = getComponentName(cl);
-        if (e.hasComponentWithName(alias))
+        if (e.hasComponentWithName(alias)) {
+            var b = e.getComponentByName(alias);
+            @:privateAccess b.onContext(e);
             return;
+        }
         e.addComponentByName(alias, this);
         this.upwardOnly = upwardOnly;
         this.cl = cl;
