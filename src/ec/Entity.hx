@@ -6,7 +6,7 @@ class Entity {
     public var parent(default, null):Entity;
     /**
     * The signal dispatches to entity and all their children hierarchy after it been added to parent
-**/
+    **/
     public var onContext(default, null):Signal<Entity -> Void> = new Signal();
 
     public function new() {}
@@ -45,6 +45,10 @@ class Entity {
         return children;
     }
 
+    /**
+    * Looks for child by given path represented as array where element means index of entity at given depth. I. e.
+    * e.getGrandchild([1,2]) is equivalent for egetChildren()[1].getChildren()[2].
+    **/
     public function getGrandchild(path:Array<Int>) {
         var id = path.shift();
         if (children.length > id) {
@@ -136,6 +140,9 @@ class Entity {
         return parent.getComponentByNameUpward(name);
     }
 
+    /**
+    *   Walks through hierarchy and calls given function for each entity with their path represented as array of indices
+    **/
     public function traverse(h:(Entity, Array<String>) -> Void, path:Array<String>) {
         h(this, path);
         var id = "" +
@@ -148,23 +155,4 @@ class Entity {
             c.traverse(h, path);
         path.pop();
     }
-
-//    public function getOrCreate<T>(clazz:Class<T>) {
-//        var got = getComponent(clazz);
-//        if (got != null)
-//            return got;
-//        got = addComponent(new T());
-//        return got;
-//    }
-
 }
-//@:allow(ec.Entity)
-//class Component {
-//    public var type(default, null):String;
-//    public var entity(default, null):Entity;
-//
-//    public function new(type) {
-//        this.type = type;
-//    }
-//}
-
