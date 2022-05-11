@@ -4,12 +4,16 @@ import Type;
 class Entity {
     var children:Array<Entity> = [];
     public var parent(default, null):Entity;
+    public var name = "";
+
     /**
     * The signal dispatches to entity and all their children hierarchy after it been added to parent
     **/
     public var onContext(default, null):Signal<Entity -> Void> = new Signal();
 
-    public function new() {}
+    public function new(n = "") {
+        this.name = n;
+    }
 
     @:access(Entity.parent)
     public function addChild(e:Entity) {
