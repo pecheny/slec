@@ -82,6 +82,7 @@ class Entity {
         components[key] = c;
         if (Std.is(c, IComponent))
             cast(c, IComponent).set_entity(this);
+        dispatchContext(this);
         return c;
     }
 
@@ -124,6 +125,10 @@ class Entity {
         return [for (k in components.keys()) k];
     }
 
+    /**
+    * Returns first occurance of T component during search upward through hierarhy and starting from this entity.
+    * If nothing found returns null.
+    **/
     public function getComponentUpward<T>(cl:Class<T>):T {
         if (hasComponent(cl))
             return getComponent(cl);
