@@ -8,7 +8,7 @@ class TestAll {
         //the long way
         var runner = new Runner();
         runner.addCase(new EntityTest());
-//        runner.addCase(new ContextBindingTest());
+        runner.addCase(new ContextBindingTest());
         Report.create(runner);
         runner.run();
 
