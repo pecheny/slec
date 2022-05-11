@@ -6,8 +6,10 @@ class CtxWatcher<T:CtxBinder> {
     var upwardOnly:Bool;
     public function new (cl:Class<T>, e:Entity, upwardOnly = false) {
         var alias = getComponentName(cl);
-        if (e.hasComponentWithName(alias)) {
+        if ( e.hasComponentWithName(alias)) {
             var b = e.getComponentByName(alias);
+            if (upwardOnly != @:privateAccess b.upwardOnly)
+                throw "Combination of CtxWatcher with different upwardOnly property is not supported yet,";
             @:privateAccess b.onContext(e);
             return;
         }
