@@ -4,9 +4,10 @@ class CtxWatcher<T:CtxBinder> {
     var ctx:T;
     var entity:Entity;
     var upwardOnly:Bool;
-    public function new (cl:Class<T>, e:Entity, upwardOnly = false) {
+
+    public function new(cl:Class<T>, e:Entity, upwardOnly = false) {
         var alias = getComponentName(cl);
-        if ( e.hasComponentWithName(alias)) {
+        if (e.hasComponentWithName(alias)) {
             var b = e.getComponentByName(alias);
             if (upwardOnly != @:privateAccess b.upwardOnly)
                 throw "Combination of CtxWatcher with different upwardOnly property is not supported yet,";
@@ -22,7 +23,7 @@ class CtxWatcher<T:CtxBinder> {
     }
 
     function getComponentName(cl:Class<T>) {
-        return "ctxbinder_"+Entity.getComponentId(cl);
+        return "ctxbinder_" + Entity.getComponentId(cl);
     }
 
     function onContext(e:Entity) {
@@ -30,7 +31,7 @@ class CtxWatcher<T:CtxBinder> {
             ctx.unbind(entity);
         if (!upwardOnly)
             ctx = entity.getComponentUpward(cl);
-        else if(entity.parent != null)
+        else if (entity.parent != null)
             ctx = entity.parent.getComponentUpward(cl);
         else
             ctx = null;
@@ -54,6 +55,7 @@ class CtxWatcher<T:CtxBinder> {
 
 interface CtxBinder {
     function bind(e:Entity):Void;
+
     function unbind(e:Entity):Void;
 }
 
