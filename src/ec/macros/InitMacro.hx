@@ -1,6 +1,17 @@
 package ec.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+
+/**
+* The purpose of this macro is to
+* build initialization boilerplate for components which depends on other components.
+* It generates body for _init() method which should be presented in a class you are @:autobuilding.
+* Also you should subscribe this _init() handler to onContext of the entity supposed to be a source of dependencies.
+* For each variable  annotated with @:once meta the _init() function will look for component of proper type in the entity hierarchy and assign it when found.
+* When all fields with @:once meta have values, the init() (do not confuse with _init()) will called. The init() method also should be presented in the class. It supposed to do the initialization which needs the dependencies and can be overridden in classes which extend autobuilded.
+* @:see InitMacroTest for usage example.
+**/
+
 class InitMacro {
 
     public static function build():Array<Field> {
