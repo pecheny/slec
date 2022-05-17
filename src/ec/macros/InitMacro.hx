@@ -31,12 +31,6 @@ class InitMacro {
                     initMethod = f;
                     initExprs = ie;
                 }
-                // case {name:name, kind:FVar(ct), meta: [{name: ":listen"}]}:
-                //     switch ct {
-                //         case TPath({name:typeName, pack:[]}):
-                //             initListen[name] = typeName;
-                //         case _:throw "Wrong type to inject" + ct;
-                //     }
                 case {name:name, kind:FVar(ct), meta: [{name: ":once", params: prms}]}:
                     {
                         var alias = switch prms {
@@ -69,7 +63,6 @@ class InitMacro {
 
         for (name in initOnce.keys()) {
             var injection = initOnce[name];
-            trace(injection);
             if (injection.alias != null) {
                 var alias = injection.type + "_" + injection.alias;
                 initExprs.push(macro if ($i{name}== null) {
