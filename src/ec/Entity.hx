@@ -73,8 +73,8 @@ class Entity {
 
     static public function getComponentId(c:Dynamic):String {
         var id = switch c {
-            case _ if (Std.is(c, Class)) : Type.getClassName(c);
-            case _ if (Std.is(c, ICustomComponentId)) : cast(c, ICustomComponentId).getId();
+            case _ if (Std.isOfType(c, Class)) : Type.getClassName(c);
+            case _ if (Std.isOfType(c, ICustomComponentId)) : cast(c, ICustomComponentId).getId();
             case _ : Type.getClassName(Type.getClass(c));
         }
         return id;
@@ -84,7 +84,7 @@ class Entity {
         if (components.exists(key))
             throw 'Component $key already exists on this entity';
         components[key] = c;
-        if (Std.is(c, IComponent))
+        if (Std.isOfType(c, IComponent))
             cast(c, IComponent).set_entity(this);
         dispatchContext(this);
         return c;
@@ -98,7 +98,7 @@ class Entity {
         if (!components.exists(name))
             throw "No component with name " + name;
         var c = components[name];
-        if (Std.is(c, IComponent))
+        if (Std.isOfType(c, IComponent))
             cast(c, IComponent).set_entity(null);
         if (!components.remove(name))
             throw "Wrong";
