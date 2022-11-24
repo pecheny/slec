@@ -31,12 +31,12 @@ class InitMacro {
         return false;
     }
 
-    static function addBoolField(fields:Array<Field>, name) {
+    static function addField(fields:Array<Field>, name, type, ?e) {
         if (!hasField(Context.getLocalClass().get(), name))
             fields.push({
                 pos: Context.currentPos(),
                 name: name,
-                kind: FieldType.FVar(macro : Bool),
+                kind: FieldType.FVar(type, e),
             });
     }
 
@@ -52,6 +52,48 @@ class InitMacro {
             access:access,
             kind: FieldType.FFun({args:[], expr:{expr:EBlock(exprs), pos:Context.currentPos()}}),
         });
+    }
+
+    static function addCountAndResolveDepsMethod(fields, initOnce:Map<String, {
+            type:String, ?alias:String
+    }> ) {
+        var name = "_countAndResolveDeps";
+        var initExprs = [];
+        var totalListeners = Lambda.count(initOnce);
+        if (hasField(Context.getLocalClass().get(), name)) {
+            initExprs.push(macro _depsCount += $v{totalListeners});
+        } else {
+            addField(fields, "_depsCount", macro : Int, macro 0);
+            initExprs.push(macro _depsCount = $v{totalListeners});
+        }
+
+//        initExprs.push(macro var listenersCount = $v{totalListeners});
+
+        for (name in initOnce.keys()) {
+            var injection = initOnce[name];
+            initExprs.push(macro var wasNull = $i{name} == null);
+            if (injection.alias != null) {
+                var alias = injection.type + "_" + injection.alias;
+                initExprs.push(macro if($i{name}== null) {
+                    $i{name} = entity.getComponentByNameUpward($v{alias});
+                });
+            } else {
+                initExprs.push(macro if($i{name}== null) {
+                    $i{name} = entity.getComponentUpward($i{injection.type});
+                });
+            }
+
+
+            initExprs.push(macro
+            if($i{name}!= null) {
+                if (_verbose && wasNull) {
+                    trace($i{name} + " assigned " + _depsCount);
+//                    _showDeps();
+                }
+                _depsCount--;
+            });
+        }
+        addMethod(fields, "_countAndResolveDeps", initExprs);
     }
 
     public static function build():Array<Field> {
@@ -90,46 +132,22 @@ class InitMacro {
         }
         initExprs.unshift(macro if (_verbose) trace("init called " + this));
 
-        addBoolField(fields, "_verbose");
+        addField(fields, "_verbose", macro : Bool);
 
         var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
             return fields;
 
+
 //        var traceStatusExprs = ;
 
-        addBoolField(fields, "_inited");
+        addField(fields, "_inited", macro : Bool);
 //        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
+        addCountAndResolveDepsMethod(fields, initOnce);
 
-        initExprs.push(macro var listenersCount = $v{totalListeners});
-
-        for (name in initOnce.keys()) {
-            var injection = initOnce[name];
-            initExprs.push(macro var wasNull = $i{name} == null);
-            if (injection.alias != null) {
-                var alias = injection.type + "_" + injection.alias;
-                initExprs.push(macro if($i{name}== null) {
-                    $i{name} = entity.getComponentByNameUpward($v{alias});
-                });
-            } else {
-                initExprs.push(macro if($i{name}== null) {
-                    $i{name} = entity.getComponentUpward($i{injection.type});
-                });
-            }
-
-
-            initExprs.push(macro
-            if($i{name}!= null) {
-                if (_verbose && wasNull) {
-                    trace($i{name} + " assigned " + listenersCount);
-//                    _showDeps();
-                }
-                listenersCount--;
-            });
-        }
-
+        initExprs.push(macro  _countAndResolveDeps());
         initExprs.push(macro 
-        if (listenersCount == 0) {
+        if (_depsCount == 0) {
             entity.onContext.remove(_init);
             if (_inited)
                 return;
