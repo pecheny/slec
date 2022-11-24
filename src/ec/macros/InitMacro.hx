@@ -1,4 +1,5 @@
 package ec.macros;
+import haxe.macro.Type.ClassType;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
@@ -13,6 +14,45 @@ import haxe.macro.Expr;
 **/
 
 class InitMacro {
+    static function hasField(ct:ClassType, name) {
+        trace("check " + ct.name + " " + name);
+        for (f in ct.fields.get())
+            if (f.name == name) {
+                trace(ct.name + " has field " + name);
+                return true;
+            }
+        trace("check super of " + ct.name);
+        if (ct.superClass != null) {
+            var r = hasField(ct.superClass.t.get(), name);
+            trace(r);
+            return r;
+        }
+        trace("false");
+        return false;
+    }
+
+    static function addBoolField(fields:Array<Field>, name) {
+        if (!hasField(Context.getLocalClass().get(), name))
+            fields.push({
+                pos: Context.currentPos(),
+                name: name,
+                kind: FieldType.FVar(macro : Bool),
+            });
+    }
+
+    static function addMethod(fields:Array<Field>, name, exprs:Array<Expr>) {
+        var access = null;
+        if (hasField(Context.getLocalClass().get(), name)) {
+            access = [AOverride];
+            exprs.unshift(macro $p{["super", name]}());
+        }
+        fields.push({
+            pos: Context.currentPos(),
+            name: name,
+            access:access,
+            kind: FieldType.FFun({args:[], expr:{expr:EBlock(exprs), pos:Context.currentPos()}}),
+        });
+    }
 
     public static function build():Array<Field> {
         var fields = Context.getBuildFields();
@@ -20,7 +60,7 @@ class InitMacro {
         var initFun;
 
         var initOnce:Map<String, {
-            type:String, ?alias:String
+                type:String, ?alias:String
         }> = new Map();
         var initMethod;
         var initExprs = [];
@@ -48,24 +88,27 @@ class InitMacro {
             }
 
         }
+        initExprs.unshift(macro if (_verbose) trace("init called " + this));
+
+        addBoolField(fields, "_verbose");
 
         var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
             return fields;
 
-        fields.push({
-            pos: Context.currentPos(),
-            name: "_inited",
-            kind: FieldType.FVar(macro : Bool, macro false),
-        });
+//        var traceStatusExprs = ;
+
+        addBoolField(fields, "_inited");
+//        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
 
         initExprs.push(macro var listenersCount = $v{totalListeners});
 
         for (name in initOnce.keys()) {
             var injection = initOnce[name];
+            initExprs.push(macro var wasNull = $i{name} == null);
             if (injection.alias != null) {
                 var alias = injection.type + "_" + injection.alias;
-                initExprs.push(macro if ($i{name}== null) {
+                initExprs.push(macro if($i{name}== null) {
                     $i{name} = entity.getComponentByNameUpward($v{alias});
                 });
             } else {
@@ -75,8 +118,12 @@ class InitMacro {
             }
 
 
-            initExprs.push(macro 
+            initExprs.push(macro
             if($i{name}!= null) {
+                if (_verbose && wasNull) {
+                    trace($i{name} + " assigned " + listenersCount);
+//                    _showDeps();
+                }
                 listenersCount--;
             });
         }
@@ -84,9 +131,11 @@ class InitMacro {
         initExprs.push(macro 
         if (listenersCount == 0) {
             entity.onContext.remove(_init);
-            if(_inited)
+            if (_inited)
                 return;
             _inited = true;
+            if (_verbose)
+                trace("_init done, calling init()");
             init();
         });
 
