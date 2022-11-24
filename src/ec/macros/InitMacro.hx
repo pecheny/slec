@@ -15,19 +15,14 @@ import haxe.macro.Expr;
 
 class InitMacro {
     static function hasField(ct:ClassType, name) {
-        trace("check " + ct.name + " " + name);
         for (f in ct.fields.get())
             if (f.name == name) {
-                trace(ct.name + " has field " + name);
                 return true;
             }
-        trace("check super of " + ct.name);
         if (ct.superClass != null) {
             var r = hasField(ct.superClass.t.get(), name);
-            trace(r);
             return r;
         }
-        trace("false");
         return false;
     }
 
