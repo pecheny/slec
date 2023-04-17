@@ -4,9 +4,13 @@ class CtxWatcher<T:CtxBinder> {
     var ctx:T;
     var entity:Entity;
     var upwardOnly:Bool;
+    var verbose:Bool;
 
-    public function new(cl:Class<T>, e:Entity, upwardOnly = false) {
+    public function new(cl:Class<T>, e:Entity, upwardOnly = false, verbose = false) {
         var alias = getComponentName(cl);
+        this.verbose = verbose;
+        if (verbose)
+            trace("watcher created");
         if (e.hasComponentWithName(alias)) {
             var b = e.getComponentByName(alias);
             if (upwardOnly != @:privateAccess b.upwardOnly)
@@ -27,6 +31,8 @@ class CtxWatcher<T:CtxBinder> {
     }
 
     function onContext(e:Entity) {
+        if (verbose)
+            trace("onContext"+ entity.name);
         if (ctx != null)
             ctx.unbind(entity);
         if (!upwardOnly)
@@ -38,6 +44,8 @@ class CtxWatcher<T:CtxBinder> {
         if (ctx == null) {
             return;
         }
+        if (verbose)
+            trace("binding " + entity.name);
         ctx.bind(entity);
     }
 
