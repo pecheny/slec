@@ -164,4 +164,15 @@ class Entity {
             c.traverse(h, path);
         path.pop();
     }
+
+    public function findFirstInside<T>(cl:Class<T>):T  {
+        var selfComp = getComponent(cl);
+        if (selfComp!=null) return selfComp;
+        for (ch in children) {
+            var compOnChild  = ch.findFirstInside(cl);
+            if (compOnChild != null)
+                return compOnChild;
+        }
+        return null;
+    }
 }
