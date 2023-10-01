@@ -155,7 +155,7 @@ class InitMacro {
 
         if (initMethod == null) {
             initMethod = {
-                access:[AOverride],
+                access: hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
                 name:'_init',
                 kind:FFun({
                     args: [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}],
