@@ -1,12 +1,20 @@
 package ec;
-class CtxWatcher<T:CtxBinder> {
-    var cl:Class<T>;
+
+class CtxWatcher<T:CtxBinder> extends CtxWatcherBase<T> {
+    public function new(cl:Class<T>, e:Entity, upwardOnly = false, verbose = false) {
+        var alias = Entity.getComponentId(cl);
+        super(alias, e, upwardOnly, verbose);
+    }
+}
+
+class CtxWatcherBase<T:CtxBinder> {
+    var cl:String;
     var ctx:T;
     var entity:Entity;
     var upwardOnly:Bool;
     var verbose:Bool;
 
-    public function new(cl:Class<T>, e:Entity, upwardOnly = false, verbose = false) {
+    public function new(cl, e:Entity, upwardOnly = false, verbose = false) {
         var alias = getComponentName(cl);
         this.verbose = verbose;
         if (verbose)
@@ -26,19 +34,19 @@ class CtxWatcher<T:CtxBinder> {
         onContext(e.parent);
     }
 
-    function getComponentName(cl:Class<T>) {
-        return "ctxbinder_" + Entity.getComponentId(cl);
+    function getComponentName(alias) {
+        return "ctxbinder_" + alias;
     }
 
     function onContext(e:Entity) {
         if (verbose)
-            trace("onContext"+ entity.name);
+            trace("onContext" + entity.name);
         if (ctx != null)
             ctx.unbind(entity);
         if (!upwardOnly)
-            ctx = entity.getComponentUpward(cl);
+            ctx = entity.getComponentByNameUpward(cl);
         else if (entity.parent != null)
-            ctx = entity.parent.getComponentUpward(cl);
+            ctx = entity.parent.getComponentByNameUpward(cl);
         else
             ctx = null;
         if (ctx == null) {
@@ -58,7 +66,6 @@ class CtxWatcher<T:CtxBinder> {
         if (ctx != null)
             ctx.bind(entity);
     }
-
 }
 
 interface CtxBinder {
@@ -66,4 +73,3 @@ interface CtxBinder {
 
     function unbind(e:Entity):Void;
 }
-
