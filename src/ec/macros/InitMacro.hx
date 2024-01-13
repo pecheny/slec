@@ -35,23 +35,23 @@ class InitMacro {
             });
     }
 
-    static function addMethod(fields:Array<Field>, name, exprs:Array<Expr>) {
+    static function addMethod(fields:Array<Field>, name, exprs:Array<Expr>, args:Array<FunctionArg> = null) {
         var access = null;
+        if (args == null)
+            args = [];
         if (hasField(Context.getLocalClass().get(), name)) {
             access = [AOverride];
-            exprs.unshift(macro $p{["super", name]}());
+            exprs.unshift(macro $p{["super", name]}($a{args.map(ar -> macro $i{ar.name})}));
         }
         fields.push({
             pos: Context.currentPos(),
             name: name,
             access:access,
-            kind: FieldType.FFun({args:[], expr:{expr:EBlock(exprs), pos:Context.currentPos()}}),
+            kind: FieldType.FFun({args:args, expr:{expr:EBlock(exprs), pos:Context.currentPos()}}),
         });
     }
 
-    static function addCountAndResolveDepsMethod(fields, initOnce:Map<String, {
-            type:String, ?alias:String
-    }> ) {
+    static function addCountAndResolveDepsMethod(fields, initOnce:Map<String, { type:String, ?alias:String }> ) {
         var name = "_countAndResolveDeps";
         var initExprs = [];
         var totalListeners = Lambda.count(initOnce);
@@ -70,11 +70,11 @@ class InitMacro {
             if (injection.alias != null) {
                 var alias = injection.type + "_" + injection.alias;
                 initExprs.push(macro if($i{name}== null) {
-                    $i{name} = entity.getComponentByNameUpward($v{alias});
+                    $i{name} = e.getComponentByNameUpward($v{alias});
                 });
             } else {
                 initExprs.push(macro if($i{name}== null) {
-                    $i{name} = entity.getComponentUpward($i{injection.type});
+                    $i{name} = e.getComponentUpward($i{injection.type});
                 });
             }
 
@@ -88,7 +88,7 @@ class InitMacro {
                 _depsCount--;
             });
         }
-        addMethod(fields, "_countAndResolveDeps", initExprs);
+        addMethod(fields, "_countAndResolveDeps", initExprs, [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}]);
     }
 
     public static function build():Array<Field> {
@@ -140,7 +140,7 @@ class InitMacro {
 //        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
         addCountAndResolveDepsMethod(fields, initOnce);
 
-        initExprs.push(macro  _countAndResolveDeps());
+        initExprs.push(macro  _countAndResolveDeps(this.entity));
         initExprs.push(macro 
         if (_depsCount == 0) {
             entity.onContext.remove(_init);
