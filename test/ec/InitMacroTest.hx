@@ -70,8 +70,9 @@ class InjectionTester extends MacroBaseClass {
     @:once("named") public var named:Obj;
 
     public function new() {
-        entity.onContext.listen(_init);
-        _init(entity.parent);
+        watch(entity);
+        // entity.onContext.listen(_init);
+        // entity.dispatchContext();
     }
 
     function _init(e) {}

@@ -1,5 +1,6 @@
 package ec.macros;
 
+import haxe.CallStack;
 import haxe.macro.Type.ClassType;
 import haxe.macro.Context;
 import haxe.macro.Expr;
@@ -16,15 +17,17 @@ import haxe.macro.Expr;
 class InitMacro {
     static var template = macro class Templ {
         var sources:Array<ec.Entity> = [];
+        var _inited:Bool = false;
 
         public function watch(e) {
+            if (_inited)
+                return;
             sources.push(e);
             e.onContext.listen(_init);
             e.dispatchContext(e);
         }
 
         function unsubscribe() {
-            this.entity.onContext.remove(_init);
             if(sources == null)
                 return;
             for (e in sources)
@@ -90,8 +93,8 @@ class InitMacro {
             addField(fields, "_depsCount", macro : Int, macro 0);
             initExprs.push(macro _depsCount = $v{totalListeners});
         }
-
-        //        initExprs.push(macro var listenersCount = $v{totalListeners});
+        
+        initExprs.push(macro if (e == null) return);
 
         for (name in initOnce.keys()) {
             var injection = initOnce[name];
@@ -112,9 +115,10 @@ class InitMacro {
             if($i{name}!= null) {
                 if (_verbose && wasNull) {
                     trace($i{name} + " assigned " + _depsCount);
-                    //                    _showDeps();
                 }
                 _depsCount--;
+                if(_verbose)
+                    trace(this, $i{name} , $v{name}, '$_depsCount remains');
             });
         }
         addMethod(fields, "_countAndResolveDeps", initExprs, [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}]);
@@ -159,7 +163,8 @@ class InitMacro {
             }
 
         }
-        initExprs.unshift(macro if (_verbose) trace("init called " + this));
+        
+        initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath()/*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
 
         addField(fields, "_verbose", macro : Bool);
 
@@ -167,23 +172,21 @@ class InitMacro {
         if (totalListeners == 0)
             return fields;
 
-
-        //        var traceStatusExprs = ;
-
-        addField(fields, "_inited", macro : Bool);
         //        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
         addCountAndResolveDepsMethod(fields, initOnce);
 
-        initExprs.push(macro  _countAndResolveDeps(this.entity));
-        initExprs.push(macro  if(e!=null) _countAndResolveDeps(e));
+        // initExprs.push(macro  _countAndResolveDeps(this.entity));
+        initExprs.push(macro  _countAndResolveDeps(e));
         initExprs.push(macro 
         if (_depsCount == 0) {
-            unsubscribe();
             if (_inited)
                 return;
+            unsubscribe();
             _inited = true;
-            if (_verbose)
-                trace("_init done, calling init()");
+            if (_verbose) {
+                trace(this, "_init done, calling init()\n\n");
+                trace(e, e.getPath());
+            }
             init();
         });
 
