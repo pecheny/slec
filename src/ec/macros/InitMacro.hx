@@ -34,21 +34,29 @@ class InitMacro {
         public function init() {}
         function _init(e:ec.Entity){}
     }
+    static function hasField(name) {
+        var fields = Context.getBuildFields();
+        for (f in fields)
+            if (f.name == name)
+                return true;
+        var lc = Context.getLocalClass().get();
+        return _hasField(lc, name);
+    }
 
-    static function hasField(ct:ClassType, name) {
+    static function _hasField(ct:ClassType, name) {
         for (f in ct.fields.get())
             if (f.name == name) {
                 return true;
             }
         if (ct.superClass != null) {
-            var r = hasField(ct.superClass.t.get(), name);
+            var r = _hasField(ct.superClass.t.get(), name);
             return r;
         }
         return false;
     }
 
     static function addField(fields:Array<Field>, name, type, ?e) {
-        if (!hasField(Context.getLocalClass().get(), name))
+        if (!hasField(name))
             fields.push({
                 pos: Context.currentPos(),
                 name: name,
@@ -60,7 +68,7 @@ class InitMacro {
         var access = null;
         if (args == null)
             args = [];
-        if (hasField(Context.getLocalClass().get(), name)) {
+        if (_hasField(Context.getLocalClass().get(), name)) {
             access = [AOverride];
             exprs.unshift(macro $p{["super", name]}($a{args.map(ar -> macro $i{ar.name})}));
         }
@@ -76,7 +84,7 @@ class InitMacro {
         var name = "_countAndResolveDeps";
         var initExprs = [];
         var totalListeners = Lambda.count(initOnce);
-        if (hasField(Context.getLocalClass().get(), name)) {
+        if (_hasField(Context.getLocalClass().get(), name)) {
             initExprs.push(macro _depsCount += $v{totalListeners});
         } else {
             addField(fields, "_depsCount", macro : Int, macro 0);
@@ -115,9 +123,10 @@ class InitMacro {
     public static function build():Array<Field> {
         var fields = Context.getBuildFields();
         var lc = Context.getLocalClass().get();
-        for (f in template.fields)
-            if (!hasField(lc, f.name))
+        for (f in template.fields) {
+            if (!hasField(f.name))
                 fields.push(f);
+        }
         var pos = Context.currentPos();
         var initFun;
 
@@ -181,7 +190,7 @@ class InitMacro {
 
         if (initMethod == null) {
             initMethod = {
-                access: hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
+                access: _hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
                 name:'_init',
                 kind:FFun({
                     args: [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}],
