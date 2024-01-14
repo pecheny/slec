@@ -1,19 +1,40 @@
 package ec.macros;
+
 import haxe.macro.Type.ClassType;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
 /**
-* The purpose of this macro is to
-* build initialization boilerplate for components which depends on other components.
-* It generates body for _init() method which should be presented in a class you are @:autobuilding.
-* Also you should subscribe this _init() handler to onContext of the entity supposed to be a source of dependencies.
-* For each variable  annotated with @:once meta the _init() function will look for component of proper type in the entity hierarchy and assign it when found.
-* When all fields with @:once meta have values, the init() (do not confuse with _init()) will called. The init() method also should be presented in the class. It supposed to do the initialization which needs the dependencies and can be overridden in classes which extend autobuilded.
-* @:see InitMacroTest for usage example.
+ * The purpose of this macro is to
+ * build initialization boilerplate for components which depends on other components.
+ * It generates body for _init() method which should be presented in a class you are @:autobuilding.
+ * Also you should subscribe this _init() handler to onContext of the entity supposed to be a source of dependencies.
+ * For each variable  annotated with @:once meta the _init() function will look for component of proper type in the entity hierarchy and assign it when found.
+ * When all fields with @:once meta have values, the init() (do not confuse with _init()) will called. The init() method also should be presented in the class. It supposed to do the initialization which needs the dependencies and can be overridden in classes which extend autobuilded.
+ * @:see InitMacroTest for usage example.
 **/
-
 class InitMacro {
+    static var template = macro class Templ {
+        var sources:Array<ec.Entity> = [];
+
+        public function watch(e) {
+            sources.push(e);
+            e.onContext.listen(_init);
+            e.dispatchContext(e);
+        }
+
+        function unsubscribe() {
+            this.entity.onContext.remove(_init);
+            if(sources == null)
+                return;
+            for (e in sources)
+                e.onContext.remove(_init);
+            sources = null;
+        }
+        public function init() {}
+        function _init(e:ec.Entity){}
+    }
+
     static function hasField(ct:ClassType, name) {
         for (f in ct.fields.get())
             if (f.name == name) {
@@ -62,7 +83,7 @@ class InitMacro {
             initExprs.push(macro _depsCount = $v{totalListeners});
         }
 
-//        initExprs.push(macro var listenersCount = $v{totalListeners});
+        //        initExprs.push(macro var listenersCount = $v{totalListeners});
 
         for (name in initOnce.keys()) {
             var injection = initOnce[name];
@@ -83,7 +104,7 @@ class InitMacro {
             if($i{name}!= null) {
                 if (_verbose && wasNull) {
                     trace($i{name} + " assigned " + _depsCount);
-//                    _showDeps();
+                    //                    _showDeps();
                 }
                 _depsCount--;
             });
@@ -93,6 +114,10 @@ class InitMacro {
 
     public static function build():Array<Field> {
         var fields = Context.getBuildFields();
+        var lc = Context.getLocalClass().get();
+        for (f in template.fields)
+            if (!hasField(lc, f.name))
+                fields.push(f);
         var pos = Context.currentPos();
         var initFun;
 
@@ -105,9 +130,9 @@ class InitMacro {
         for (f in fields) {
             switch f {
                 case {name:'_init', kind:FFun({args:[{name:en}], expr:{expr:EBlock(ie)}})}:{
-                    initMethod = f;
-                    initExprs = ie;
-                }
+                        initMethod = f;
+                        initExprs = ie;
+                    }
                 case {name:name, kind:FVar(ct), meta: [{name: ":once", params: prms}]}:
                     {
                         var alias = switch prms {
@@ -134,16 +159,17 @@ class InitMacro {
             return fields;
 
 
-//        var traceStatusExprs = ;
+        //        var traceStatusExprs = ;
 
         addField(fields, "_inited", macro : Bool);
-//        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
+        //        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
         addCountAndResolveDepsMethod(fields, initOnce);
 
         initExprs.push(macro  _countAndResolveDeps(this.entity));
+        initExprs.push(macro  if(e!=null) _countAndResolveDeps(e));
         initExprs.push(macro 
         if (_depsCount == 0) {
-            entity.onContext.remove(_init);
+            unsubscribe();
             if (_inited)
                 return;
             _inited = true;
@@ -161,7 +187,7 @@ class InitMacro {
                     args: [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}],
                     expr:{expr:EBlock(initExprs), pos:pos},
                     ret:null
-                }
+                        }
                 ),
                 pos:pos
             } ;
