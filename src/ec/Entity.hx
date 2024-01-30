@@ -177,4 +177,15 @@ class Entity {
         }
         return null;
     }
+
+    public function toString() {
+        return '[Entity $name]';
+    }
+
+    public function getPath() {
+        var r = name;
+        if(parent!=null)
+            r = parent.getPath()  + " / " + r; 
+        return r;
+    }
 }
