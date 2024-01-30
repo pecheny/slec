@@ -26,7 +26,9 @@ class Entity {
         e.dispatchContext(this);
     }
 
-    public function dispatchContext(e:Entity) {
+    public function dispatchContext(e:Entity = null) {
+        if (e == null)
+            e = this;
         onContext.dispatch(e);
         for (ch in children)
             ch.dispatchContext(e);
