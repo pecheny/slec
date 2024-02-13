@@ -83,8 +83,11 @@ class InitMacro {
         });
     }
 
-    static function addCountAndResolveDepsMethod(fields, initOnce:Map<String, { type:String, ?alias:String }> ) {
+    static function addCountAndResolveDepsMethod(fields:Array<Field>, initOnce:Map<String, { type:String, ?alias:String }> ) {
         var name = "_countAndResolveDeps";
+        for (f in fields)
+            if (f.name == name)
+                return ;
         var initExprs = [];
         var totalListeners = Lambda.count(initOnce);
         if (_hasField(Context.getLocalClass().get(), name)) {
