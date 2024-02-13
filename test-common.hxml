@@ -1,0 +1,6 @@
+-lib utest
+-cp ./src
+-cp ./test
+# -x Main
+--main TestAll
+# -D UTEST_FAILURE_THROW

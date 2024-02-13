@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+			"label": "run tests HL/JIT (debug)",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"haxe",
+				"test-common.hxml",
+				"-hl",
+				"export/run.hl",
+                "-D", "UTEST_FAILURE_THROW"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error",
+				"$haxe-trace"
+			]
+		}
+    ]
+}

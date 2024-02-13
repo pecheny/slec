@@ -1,0 +1,4 @@
+test-common.hxml
+--hl export/run.hl
+--cmd hl export/run.hl
+# --js test.js

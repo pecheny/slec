@@ -1,0 +1,33 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "window.title":"SLEC",
+        "search.exclude": {
+            "**/node_modules": true,
+            "**/bower_components": true,
+            "**/Export": true,
+            "**/*.c": true,
+            "**/*.h": true,
+            "**/*.hh": true,
+            "**/*.cpp": true,
+            "**/*.code-search": true
+        },
+        // "haxe.diagnosticsPathFilter": "${workspaceRoot}/src",
+        "git.detectSubmodules": false,
+        "git.autoRepositoryDetection": "openEditors",
+        "json.schemas": [
+            {
+                "fileMatch": ["*/dialogs/*"],
+                "url": "./talk.schema.json"
+            }
+            
+        ],
+        "haxe.configurations": [
+            {"label": "test HashLink/JIT", "args": ["test-common.hxml", "-hl", "export/run.hl", "-cmd", "hl export/run.hl" ]},
+        ],
+    }
+}

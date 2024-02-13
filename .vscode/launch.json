@@ -1,0 +1,18 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+        {
+			"name": "Debug haxe eval",
+			"type": "haxe-eval",
+			"request": "launch",
+			"args": ["test.hxml", "-lib", "test-adapter"]
+		},
+        {
+			"name": "run tests HashLink/JIT",
+			"type": "hl",
+			"request": "launch",
+			"preLaunchTask": "run tests HL/JIT (debug)",
+			"cwd": "${workspaceFolder}"
+		},
+	]
+}
