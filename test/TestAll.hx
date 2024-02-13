@@ -10,6 +10,7 @@ class TestAll {
         runner.addCase(new EntityTest());
         runner.addCase(new ContextBindingTest());
         runner.addCase(new InitMacroTest());
+        runner.addCase(new ec.FlagComponentTest());
         Report.create(runner);
         runner.run();
     }
