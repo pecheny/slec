@@ -10,7 +10,7 @@ interface Flag {
 
 @:autoBuild(ec.macros.Macros.buildFlagCompo())
 class PropertyComponent<T> extends EntityHolder {
-    public var onChange(default, null):Signal<T->Void> = new Signal();
+    public var onChange(default, null):Signal<Void->Void> = new Signal();
     @:isVar public var value(get, set):T;
 
     function get_value():T {
@@ -19,7 +19,7 @@ class PropertyComponent<T> extends EntityHolder {
 
     function set_value(value:T):T {
         this.value = value;
-        onChange.dispatch(value);
+        onChange.dispatch();
         return value;
     }
 

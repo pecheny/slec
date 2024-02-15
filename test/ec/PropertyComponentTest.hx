@@ -14,7 +14,7 @@ class PropertyComponentTest extends Test{
         var e = new ec.Entity();
         var tp = IntPropComponent.getOrCreate(e);
         var res = 0;
-        tp.onChange.listen(v -> res = v);
+        tp.onChange.listen(() -> res = tp.value);
         tp.value = 5;
         Assert.equals(5, tp.value);
     
