@@ -1,3 +1,4 @@
+import ec.PropertyComponentTest;
 import ec.InitMacroTest;
 import ec.ContextBindingTest;
 import ec.EntityTest;
@@ -10,7 +11,7 @@ class TestAll {
         runner.addCase(new EntityTest());
         runner.addCase(new ContextBindingTest());
         runner.addCase(new InitMacroTest());
-        runner.addCase(new ec.FlagComponentTest());
+        runner.addCase(new PropertyComponentTest());
         Report.create(runner);
         runner.run();
     }
