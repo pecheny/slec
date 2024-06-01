@@ -17,6 +17,7 @@ class PropertyComponentTest extends Test{
         tp.onChange.listen(() -> res = tp.value);
         tp.value = 5;
         Assert.equals(5, tp.value);
+        Assert.equals(5, res);
     
     }
 }
