@@ -26,10 +26,10 @@ class CtxWatcherBase<T:CtxBinder> {
             @:privateAccess b.onContext(e);
             return;
         }
-        e.addComponentByName(alias, this);
-        this.upwardOnly = upwardOnly;
         this.cl = cl;
         this.entity = e;
+        e.addComponentByName(alias, this);
+        this.upwardOnly = upwardOnly;
         entity.onContext.listen(onContext);
         onContext(e.parent);
     }
