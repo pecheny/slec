@@ -1,4 +1,5 @@
 package ec;
+import haxe.Constraints;
 import haxe.ds.ReadOnlyArray;
 import Type;
 class Entity {
@@ -25,6 +26,7 @@ class Entity {
         children.push(e);
         e.dispatchContext(this);
     }
+    
 
     public function dispatchContext(e:Entity = null) {
         if (e == null)
@@ -80,6 +82,18 @@ class Entity {
             case _ : Type.getClassName(Type.getClass(c));
         }
         return id;
+    }
+
+    /**
+        Allows to add component related to other entity.
+        Meant for routing deps between childern. Needs more design investigation.
+    **/
+    public function addAliasByName<T>(key:String, c:T):T {
+        if (components.exists(key))
+            throw 'Component $key already exists on this entity';
+        components[key] = c;
+        dispatchContext(this);
+        return c;
     }
 
     public function addComponentByName<T>(key:String, c:T):T {
@@ -149,6 +163,16 @@ class Entity {
         if (parent == null)
             return null;
         return parent.getComponentByNameUpward(name);
+    }
+
+    @:generic
+    public function getOrCreate<T:Constructible<Void -> Void>>(cl:Class<T>) {
+        var c = getComponent(cl);
+        if (c!=null)
+            return c;
+        c = new T();
+        addComponent(c);
+        return c;
     }
 
     /**
