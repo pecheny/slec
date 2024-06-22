@@ -165,12 +165,11 @@ class Entity {
         return parent.getComponentByNameUpward(name);
     }
 
-    @:generic
-    public function getOrCreate<T:Constructible<Void -> Void>>(cl:Class<T>) {
+    public function getOrCreate<T>(cl:Class<T>, fac:Void->T):T {
         var c = getComponent(cl);
         if (c!=null)
             return c;
-        c = new T();
+        c = fac();
         addComponent(c);
         return c;
     }
