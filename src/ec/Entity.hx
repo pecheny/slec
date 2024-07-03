@@ -3,12 +3,13 @@ import haxe.Constraints;
 import haxe.ds.ReadOnlyArray;
 import Type;
 class Entity {
+    #if !macro
     var children:Array<Entity> = [];
     public var parent(default, null):Entity;
     public var name = "";
 
     /**
-    * The signal dispatches to entity and all their children hierarchy after it been added to parent
+     * The signal dispatches to entity and all their children hierarchy after it been added to parent
     **/
     public var onContext(default, null):Signal<Entity -> Void> = new Signal();
 
@@ -26,7 +27,7 @@ class Entity {
         children.push(e);
         e.dispatchContext(this);
     }
-    
+
 
     public function dispatchContext(e:Entity = null) {
         if (e == null)
@@ -54,8 +55,8 @@ class Entity {
     }
 
     /**
-    * Looks for child by given path represented as array where element means index of entity at given depth. I. e.
-    * e.getGrandchild([1,2]) is equivalent for egetChildren()[1].getChildren()[2].
+     * Looks for child by given path represented as array where element means index of entity at given depth. I. e.
+     * e.getGrandchild([1,2]) is equivalent for egetChildren()[1].getChildren()[2].
     **/
     public function getGrandchild(path:Array<Int>) {
         var id = path.shift();
@@ -96,6 +97,9 @@ class Entity {
         return c;
     }
 
+    /**
+        Adds component by given key.
+    **/
     public function addComponentByName<T>(key:String, c:T):T {
         if (components.exists(key))
             throw 'Component $key already exists on this entity';
@@ -146,8 +150,8 @@ class Entity {
     }
 
     /**
-    * Returns first occurance of T component during search upward through hierarhy and starting from this entity.
-    * If nothing found returns null.
+     * Returns first occurance of T component during search upward through hierarhy and starting from this entity.
+     * If nothing found returns null.
     **/
     public function getComponentUpward<T>(cl:Class<T>):T {
         if (hasComponent(cl))
@@ -167,7 +171,7 @@ class Entity {
 
     public function getOrCreate<T>(cl:Class<T>, fac:Void->T):T {
         var c = getComponent(cl);
-        if (c!=null)
+        if (c != null)
             return c;
         c = fac();
         addComponent(c);
@@ -175,7 +179,7 @@ class Entity {
     }
 
     /**
-    *   Walks through hierarchy and calls given function for each entity with their path represented as array of indices
+     *   Walks through hierarchy and calls given function for each entity with their path represented as array of indices
     **/
     public function traverse(h:(Entity, Array<String>) -> Void, path:Array<String>) {
         h(this, path);
@@ -210,5 +214,15 @@ class Entity {
         if(parent!=null)
             r = parent.getPath()  + " / " + r; 
         return r;
+    }
+
+    #end
+    /**
+        Adds component with key composed by type and name to use with @:once(name)
+    **/
+    public macro function addNamedComponent<T>(ethis, etype,  name, c):ExprOf<T> {
+        var s1 = ec.macros.Macros.checkType(etype);
+        var str = macro $v{s1} + "_" + $name;
+        return macro $ethis.addComponentByName($str , $c);
     }
 }

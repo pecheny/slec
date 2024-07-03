@@ -37,5 +37,15 @@ class Macros {
         });
         return fields;
     }
+
+    public static function checkType(e) {
+        return switch e.expr {
+            case EConst(CIdent(s)):
+                var t = Context.getType(s); // check if there is a type with given name, typo guard
+                s;
+            case _:
+                throw "Wrong type ";
+        };
+    }
 }
 #end
