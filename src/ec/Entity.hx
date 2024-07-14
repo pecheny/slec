@@ -175,6 +175,7 @@ class Entity {
             return c;
         c = fac();
         addComponent(c);
+        addComponentByType(cl, c);
         return c;
     }
 
@@ -217,12 +218,17 @@ class Entity {
     }
 
     #end
+
     /**
         Adds component with key composed by type and name to use with @:once(name)
     **/
+    #if !display
     public macro function addNamedComponent<T>(ethis, etype,  name, c):ExprOf<T> {
         var s1 = ec.macros.Macros.checkType(etype);
         var str = macro $v{s1} + "_" + $name;
         return macro $ethis.addComponentByName($str , $c);
     }
+    #else
+    public function addNamedComponent<T>(etype:Dynamic,  name:String, c:T):T throw "for completion only";
+    #end
 }
