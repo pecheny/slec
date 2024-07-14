@@ -110,7 +110,7 @@ class Entity {
         return c;
     }
 
-    public function addComponentByType<T, Tc:T>(t:Class<T>, c:Tc):T {
+    public function addComponentByType<T, Tc:T>(t:Class<T>, c:Tc):Tc {
         return addComponentByName(getComponentId(t), c);
     }
 
