@@ -5,7 +5,7 @@ import haxe.macro.Context;
 
 #if macro
 class Macros {
-    public static function buildFlagCompo() {
+    public static function buildGetOrCreate() {
         var ct = Context.getLocalClass().get();
         var ttp = @:privateAccess haxe.macro.TypeTools.toTypePath;
         var tp:TypePath = ttp(ct, []);

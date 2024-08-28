@@ -8,7 +8,7 @@ interface Flag {
     public var enabled(get, set):Bool;
 }
 
-@:autoBuild(ec.macros.Macros.buildFlagCompo())
+@:autoBuild(ec.macros.Macros.buildGetOrCreate())
 class PropertyComponent<T> extends EntityHolder {
     public var onChange(default, null):Signal<Void->Void> = new Signal();
     @:isVar public var value(get, set):T;
