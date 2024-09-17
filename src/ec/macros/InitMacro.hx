@@ -1,9 +1,11 @@
 package ec.macros;
 
+#if macro
 import haxe.CallStack;
 import haxe.macro.Type.ClassType;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+#end
 
 /**
  * The purpose of this macro is to
@@ -15,6 +17,7 @@ import haxe.macro.Expr;
  * @:see InitMacroTest for usage example.
 **/
 class InitMacro {
+    #if macro
     static var template = macro class Templ {
         var sources:Array<ec.Entity> = [];
         var _inited:Bool = false;
@@ -214,4 +217,5 @@ class InitMacro {
         return fields;
     }
 
+    #end
 }
