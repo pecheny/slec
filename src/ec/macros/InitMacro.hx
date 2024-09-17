@@ -2,9 +2,9 @@ package ec.macros;
 
 #if macro
 import haxe.CallStack;
-import haxe.macro.Type.ClassType;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.Type.ClassType;
 #end
 
 /**
@@ -31,15 +31,18 @@ class InitMacro {
         }
 
         function unsubscribe() {
-            if(sources == null)
+            if (sources == null)
                 return;
             for (e in sources)
                 e.onContext.remove(_init);
             sources = null;
         }
+
         public function init() {}
-        function _init(e:ec.Entity){}
+
+        function _init(e:ec.Entity) {}
     }
+
     static function hasField(name) {
         var fields = Context.getBuildFields();
         for (f in fields)
@@ -81,25 +84,25 @@ class InitMacro {
         fields.push({
             pos: Context.currentPos(),
             name: name,
-            access:access,
-            kind: FieldType.FFun({args:args, expr:{expr:EBlock(exprs), pos:Context.currentPos()}}),
+            access: access,
+            kind: FieldType.FFun({args: args, expr: {expr: EBlock(exprs), pos: Context.currentPos()}}),
         });
     }
 
-    static function addCountAndResolveDepsMethod(fields:Array<Field>, initOnce:Map<String, { type:String, ?alias:String }> ) {
+    static function addCountAndResolveDepsMethod(fields:Array<Field>, initOnce:Map<String, {type:String, ?alias:String}>) {
         var name = "_countAndResolveDeps";
         for (f in fields)
             if (f.name == name)
-                return ;
+                return;
         var initExprs = [];
         var totalListeners = Lambda.count(initOnce);
         if (_hasField(Context.getLocalClass().get(), name)) {
             initExprs.push(macro _depsCount += $v{totalListeners});
         } else {
-            addField(fields, "_depsCount", macro : Int, macro 0);
+            addField(fields, "_depsCount", macro :Int, macro 0);
             initExprs.push(macro _depsCount = $v{totalListeners});
         }
-        
+
         initExprs.push(macro if (e == null) return);
 
         for (name in initOnce.keys()) {
@@ -107,34 +110,39 @@ class InitMacro {
             initExprs.push(macro var wasNull = $i{name} == null);
             if (injection.alias != null) {
                 var alias = injection.type + "_" + injection.alias;
-                initExprs.push(macro if($i{name}== null) {
+                initExprs.push(macro if ($i{name} == null) {
                     $i{name} = e.getComponentByNameUpward($v{alias});
                 });
             } else {
-                initExprs.push(macro if($i{name}== null) {
+                initExprs.push(macro if ($i{name} == null) {
                     $i{name} = e.getComponentUpward($i{injection.type});
                 });
             }
 
-
-            initExprs.push(macro
-            if($i{name}!= null) {
+            initExprs.push(macro if ($i{name} != null) {
                 if (_verbose && wasNull) {
                     trace($i{name} + " assigned " + _depsCount);
                 }
                 _depsCount--;
-                if(_verbose)
-                    trace(this, $i{name} , $v{name}, '$_depsCount remains');
+                if (_verbose)
+                    trace(this, $i{name}, $v{name}, '$_depsCount remains');
             });
         }
-        addMethod(fields, "_countAndResolveDeps", initExprs, [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}]);
+        addMethod(fields, "_countAndResolveDeps", initExprs, [
+            {
+                name: "e",
+                opt: false,
+                meta: [],
+                type: TPath({pack: ['ec'], name: 'Entity'})
+            }
+        ]);
     }
 
     public static function build():Array<Field> {
         var fields = Context.getBuildFields();
         var lc = Context.getLocalClass().get();
-        if(lc.isInterface)
-           return fields;
+        if (lc.isInterface)
+            return fields;
         for (f in template.fields) {
             if (!hasField(f.name))
                 fields.push(f);
@@ -143,38 +151,39 @@ class InitMacro {
         var initFun;
 
         var initOnce:Map<String, {
-                type:String, ?alias:String
+            type:String,
+            ?alias:String
         }> = new Map();
         var initMethod;
         var initExprs = [];
 
         for (f in fields) {
             switch f {
-                case {name:'_init', kind:FFun({args:[{name:en}], expr:{expr:EBlock(ie)}})}:{
+                case {name: '_init', kind: FFun({args: [{name: en}], expr: {expr: EBlock(ie)}})}:
+                    {
                         initMethod = f;
                         initExprs = ie;
                     }
-                case {name:name, kind:FVar(ct), meta: [{name: ":once", params: prms}]}:
+                case {name: name, kind: FVar(ct), meta: [{name: ":once", params: prms}]}:
                     {
                         var alias = switch prms {
-                            case [ { expr: EConst(CString(alias, _))} ]:alias;
-                            case []:null;
+                            case [{expr: EConst(CString(alias, _))}]: alias;
+                            case []: null;
                             case _: throw "Wrong meta";
                         }
                         switch ct {
-                            case TPath({name:typeName, pack:[]}):
-                                initOnce[name] = {type:typeName, alias:alias};
-                            case _:throw "Wrong type to inject" + ct;
+                            case TPath({name: typeName, pack: []}):
+                                initOnce[name] = {type: typeName, alias: alias};
+                            case _: throw "Wrong type to inject" + ct;
                         }
                     }
                 case _:
             }
-
         }
-        
-        initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath()/*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
 
-        addField(fields, "_verbose", macro : Bool);
+        initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
+
+        addField(fields, "_verbose", macro :Bool);
 
         var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
@@ -184,9 +193,8 @@ class InitMacro {
         addCountAndResolveDepsMethod(fields, initOnce);
 
         // initExprs.push(macro  _countAndResolveDeps(this.entity));
-        initExprs.push(macro  _countAndResolveDeps(e));
-        initExprs.push(macro 
-        if (_depsCount == 0) {
+        initExprs.push(macro _countAndResolveDeps(e));
+        initExprs.push(macro if (_depsCount == 0) {
             if (_inited)
                 return;
             unsubscribe();
@@ -198,24 +206,28 @@ class InitMacro {
             init();
         });
 
-
         if (initMethod == null) {
             initMethod = {
                 access: _hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
-                name:'_init',
-                kind:FFun({
-                    args: [{name: "e", opt: false, meta: [], type: TPath({pack:['ec'], name:'Entity'})}],
-                    expr:{expr:EBlock(initExprs), pos:pos},
-                    ret:null
+                name: '_init',
+                kind: FFun({
+                    args: [
+                        {
+                            name: "e",
+                            opt: false,
+                            meta: [],
+                            type: TPath({pack: ['ec'], name: 'Entity'})
                         }
-                ),
-                pos:pos
-            } ;
+                    ],
+                    expr: {expr: EBlock(initExprs), pos: pos},
+                    ret: null
+                }),
+                pos: pos
+            };
             fields.push(initMethod);
         }
 
         return fields;
     }
-
     #end
 }
