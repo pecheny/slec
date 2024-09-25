@@ -11,13 +11,13 @@ class Macros {
         var tp:TypePath = ttp(ct, []);
         var typeExpr:Expr = macro $i{ct.name}; // {expr:EConst(CIdent(ct.name)), pos:Context.currentPos()};
 
-        var bindCall = onCreate?? "bind";
+        var bindCall = if (onCreate == null) macro e.addComponent(tg) else macro tg.$onCreate(e);
         var body = macro {
             var tg = e.getComponent($typeExpr);
             if (tg != null)
                 return tg;
             tg = new $tp();
-            tg.$bindCall(e);
+            $bindCall;
             return tg;
         };
 

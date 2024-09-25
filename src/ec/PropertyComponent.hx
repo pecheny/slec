@@ -24,10 +24,6 @@ class PropertyComponent<T> extends EntityHolder {
     }
 
     function new() {}
-
-    public function bind(e:Entity) {
-        e.addComponent(this);
-    }
 }
 
 class FlagComponent extends PropertyComponent<Bool> implements Flag {
