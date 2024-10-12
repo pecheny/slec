@@ -7,6 +7,10 @@ class Component implements IComponent {
     @:isVar public var entity(get, set):Entity;
 
     public function new(e:Entity = null) {
+        // todo dirty hack: for unknown reasons using getOrCreate() macro for subclasses causes 'ec.Entity has no field onContext'
+        // extract minimal repro and create an issue or fix the cause
+        if(false)
+            trace(entity?.onContext);
         set_entity(e);
     }
 
