@@ -139,7 +139,11 @@ class InitMacro {
     }
 
     public static function build():Array<Field> {
+
         var fields = Context.getBuildFields();
+        #if display
+        return fields;
+        #end
         var lc = Context.getLocalClass().get();
         if (lc.isInterface)
             return fields;
