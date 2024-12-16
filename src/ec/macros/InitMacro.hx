@@ -7,6 +7,8 @@ import haxe.macro.Expr;
 import haxe.macro.Type.ClassType;
 #end
 
+using haxe.macro.ComplexTypeTools;
+
 /**
  * The purpose of this macro is to
  * build initialization boilerplate for components which depends on other components.
@@ -89,7 +91,7 @@ class InitMacro {
         });
     }
 
-    static function addCountAndResolveDepsMethod(fields:Array<Field>, initOnce:Map<String, {type:String, ?alias:String}>) {
+    static function addCountAndResolveDepsMethod(fields:Array<Field>, initOnce:Map<String, InjDescr>) {
         var name = "_countAndResolveDeps";
         for (f in fields)
             if (f.name == name)
@@ -108,8 +110,12 @@ class InitMacro {
         for (name in initOnce.keys()) {
             var injection = initOnce[name];
             initExprs.push(macro var wasNull = $i{name} == null);
-            if (injection.alias != null) {
-                var alias = injection.type + "_" + injection.alias;
+
+            var searchByName = injection.alias != null || injection.isTypedef;
+            if (searchByName) {
+                var alias = injection.type;
+                if (injection.alias != null)
+                    alias += "_" + injection.alias;
                 initExprs.push(macro if ($i{name} == null) {
                     $i{name} = e.getComponentByNameUpward($v{alias});
                 });
@@ -154,10 +160,7 @@ class InitMacro {
         var pos = Context.currentPos();
         var initFun;
 
-        var initOnce:Map<String, {
-            type:String,
-            ?alias:String
-        }> = new Map();
+        var initOnce:Map<String, InjDescr> = new Map();
         var initMethod;
         var initExprs = [];
 
@@ -176,8 +179,16 @@ class InitMacro {
                             case _: throw "Wrong meta";
                         }
                         switch ct {
-                            case TPath({name: typeName, pack: []}):
-                                initOnce[name] = {type: typeName, alias: alias};
+                            case TPath({name:typeName, pack:[]}):
+                                var isTypedef = switch ct.toType() {
+                                    case TType(_, _):true;
+                                    case _ : false;
+                                }
+                                initOnce[name] = 
+                                if (isTypedef)
+                                    {type: typeToString(ct.toType()), alias: alias, isTypedef:true};
+                                else
+                                    {type: typeName, alias: alias, isTypedef:false};
                             case _: throw "Wrong type to inject" + ct;
                         }
                     }
@@ -234,4 +245,15 @@ class InitMacro {
         return fields;
     }
     #end
+
+    static function typeToString(tp:haxe.macro.Type) {
+        switch tp {
+            case TInst(t, params):
+                return "" + t;
+            case TType(t, params):
+                return "" + t;
+            case _ : throw "Wrong";
+        }
+    }
 }
+typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool}

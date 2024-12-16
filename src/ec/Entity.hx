@@ -218,6 +218,19 @@ class Entity {
     }
 
     #end
+    public macro function addTypedef<T:{}>(ethis, t:ExprOf<T>, ?aliasExpr = null) {
+        var ttype = haxe.macro.Context.typeof(t);
+        switch ttype {
+            case TType(_.get() => tt, params):
+                var typeName = haxe.macro.TypeTools.toString(ttype);
+                var nameExpr = switch aliasExpr {
+                    case macro null: macro $v{typeName};
+                    case _: macro $v{typeName} + "_" + $aliasExpr;
+                }
+                return macro $ethis.addComponentByName($nameExpr, $t);
+            case _: throw 'Not a typedef instance passed as  e.addTypedef() argument: $t';
+        }
+    }
 
     /**
         Adds component with key composed by type and name to use with @:once(name)

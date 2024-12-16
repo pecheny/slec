@@ -1,3 +1,4 @@
+import ec.TypedefInjectionTest;
 import ec.PropertyComponentTest;
 import ec.InitMacroTest;
 import ec.ContextBindingTest;
@@ -12,6 +13,7 @@ class TestAll {
         runner.addCase(new ContextBindingTest());
         runner.addCase(new InitMacroTest());
         runner.addCase(new PropertyComponentTest());
+        runner.addCase(new TypedefInjectionTest());
         Report.create(runner);
         runner.run();
     }
