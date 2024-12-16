@@ -145,7 +145,6 @@ class InitMacro {
     }
 
     public static function build():Array<Field> {
-
         var fields = Context.getBuildFields();
         #if display
         return fields;
@@ -179,16 +178,16 @@ class InitMacro {
                             case _: throw "Wrong meta";
                         }
                         switch ct {
-                            case TPath({name:typeName, pack:[]}):
+                            case TPath({name: typeName, pack: []}):
                                 var isTypedef = switch ct.toType() {
-                                    case TType(_, _):true;
-                                    case _ : false;
+                                    case TType(_, _): true;
+                                    case _: false;
                                 }
-                                initOnce[name] = 
-                                if (isTypedef)
-                                    {type: typeToString(ct.toType()), alias: alias, isTypedef:true};
-                                else
-                                    {type: typeName, alias: alias, isTypedef:false};
+                                 initOnce[name] = 
+                                    if (isTypedef)
+                                        {type: typeToString(ct.toType()), alias: alias, isTypedef:true};
+                                    else
+                                        {type: typeName, alias: alias, isTypedef:false};
                             case _: throw "Wrong type to inject" + ct;
                         }
                     }
@@ -207,7 +206,6 @@ class InitMacro {
         //        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
         addCountAndResolveDepsMethod(fields, initOnce);
 
-        // initExprs.push(macro  _countAndResolveDeps(this.entity));
         initExprs.push(macro _countAndResolveDeps(e));
         initExprs.push(macro if (_depsCount == 0) {
             if (_inited)
@@ -252,8 +250,10 @@ class InitMacro {
                 return "" + t;
             case TType(t, params):
                 return "" + t;
-            case _ : throw "Wrong";
+            case _:
+                throw "Wrong";
         }
     }
 }
+
 typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool}

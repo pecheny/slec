@@ -1,17 +1,18 @@
 package ec;
-import haxe.Constraints;
+
 import haxe.ds.ReadOnlyArray;
 import Type;
+
 class Entity {
-    #if !macro
     var children:Array<Entity> = [];
+
     public var parent(default, null):Entity;
     public var name = "";
 
     /**
      * The signal dispatches to entity and all their children hierarchy after it been added to parent
     **/
-    public var onContext(default, null):Signal<Entity -> Void> = new Signal();
+    public var onContext(default, null):Signal<Entity->Void> = new Signal();
 
     public function new(n = "") {
         this.name = n;
@@ -28,11 +29,12 @@ class Entity {
         e.dispatchContext(this);
     }
 
-
     public function dispatchContext(e:Entity = null) {
         if (e == null)
             e = this;
+        #if !macro
         onContext.dispatch(e);
+        #end
         for (ch in children)
             ch.dispatchContext(e);
     }
@@ -62,11 +64,7 @@ class Entity {
         var id = path.shift();
         if (children.length > id) {
             var next = children[id];
-            return
-                if (path.length > 0)
-                    next.getGrandchild(path)
-                else
-                    next;
+            return if (path.length > 0) next.getGrandchild(path) else next;
         }
         return null;
     }
@@ -78,9 +76,9 @@ class Entity {
 
     static public function getComponentId(c:Dynamic):String {
         var id = switch c {
-            case _ if (Std.isOfType(c, Class)) : Type.getClassName(c);
-            case _ if (Std.isOfType(c, ICustomComponentId)) : cast(c, ICustomComponentId).getId();
-            case _ : Type.getClassName(Type.getClass(c));
+            case _ if (Std.isOfType(c, Class)): Type.getClassName(c);
+            case _ if (Std.isOfType(c, ICustomComponentId)): cast(c, ICustomComponentId).getId();
+            case _: Type.getClassName(Type.getClass(c));
         }
         return id;
     }
@@ -184,22 +182,19 @@ class Entity {
     **/
     public function traverse(h:(Entity, Array<String>) -> Void, path:Array<String>) {
         h(this, path);
-        var id = "" +
-        if (parent != null)
-            parent.getChildren().indexOf(this)
-        else
-            -1;
+        var id = "" + if (parent != null) parent.getChildren().indexOf(this) else -1;
         path.push(id);
         for (c in children)
             c.traverse(h, path);
         path.pop();
     }
 
-    public function findFirstInside<T>(cl:Class<T>):T  {
+    public function findFirstInside<T>(cl:Class<T>):T {
         var selfComp = getComponent(cl);
-        if (selfComp!=null) return selfComp;
+        if (selfComp != null)
+            return selfComp;
         for (ch in children) {
-            var compOnChild  = ch.findFirstInside(cl);
+            var compOnChild = ch.findFirstInside(cl);
             if (compOnChild != null)
                 return compOnChild;
         }
@@ -212,12 +207,11 @@ class Entity {
 
     public function getPath() {
         var r = name;
-        if(parent!=null)
-            r = parent.getPath()  + " / " + r; 
+        if (parent != null)
+            r = parent.getPath() + " / " + r;
         return r;
     }
 
-    #end
     public macro function addTypedef<T:{}>(ethis, t:ExprOf<T>, ?aliasExpr = null) {
         var ttype = haxe.macro.Context.typeof(t);
         switch ttype {
@@ -228,20 +222,22 @@ class Entity {
                     case _: macro $v{typeName} + "_" + $aliasExpr;
                 }
                 return macro $ethis.addComponentByName($nameExpr, $t);
-            case _: throw 'Not a typedef instance passed as  e.addTypedef() argument: $t';
+            case _:
+                throw 'Not a typedef instance passed as  e.addTypedef() argument: $t';
         }
     }
 
     /**
-        Adds component with key composed by type and name to use with @:once(name)
+     *  Adds component with key composed by type and name to use with @:once(name)
     **/
     #if !display
-    public macro function addNamedComponent<T>(ethis, etype,  name, c):ExprOf<T> {
+    public macro function addNamedComponent<T>(ethis, etype, name, c):ExprOf<T> {
         var s1 = ec.macros.Macros.checkType(etype);
         var str = macro $v{s1} + "_" + $name;
-        return macro $ethis.addComponentByName($str , $c);
+        return macro $ethis.addComponentByName($str, $c);
     }
     #else
-    public function addNamedComponent<T>(etype:Dynamic,  name:String, c:T):T throw "for completion only";
+    public function addNamedComponent<T>(etype:Dynamic, name:String, c:T):T
+        throw "for completion only";
     #end
 }
