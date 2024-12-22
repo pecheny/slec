@@ -23,6 +23,7 @@ class InitMacro {
     static var template = macro class Templ {
         var sources:Array<ec.Entity> = [];
         var _inited:Bool = false;
+
         public var _verbose:Bool = false;
 
         public function watch(e) {
@@ -98,7 +99,10 @@ class InitMacro {
             if (f.name == name)
                 return;
         var initExprs = [];
-        var debugExprs = [macro if (_inited) return, macro trace(this, [for (e in sources) "e: " + e.name  + " Path: " +  e.getPath()])];
+        var debugExprs = [
+            macro if (_inited) return,
+            macro trace(this, $v{Context.getLocalClass().get().name}, [for (e in sources) "e: " + e.name + " Path: " + e.getPath()])
+        ];
         var totalListeners = Lambda.count(initOnce);
         if (_hasField(Context.getLocalClass().get(), name)) {
             initExprs.push(macro _depsCount += $v{totalListeners});
@@ -135,8 +139,8 @@ class InitMacro {
                 if (_verbose)
                     trace(this, $i{name}, $v{name}, '$_depsCount remains');
             });
-            
-            debugExprs.push(macro trace($v{name}, ": ", $i{name}));
+
+            debugExprs.push(macro trace("    " + $v{name} + ": '" + $i{name} + "'"));
         }
         addMethod(fields, "_countAndResolveDeps", initExprs, [
             {
@@ -146,11 +150,10 @@ class InitMacro {
                 type: TPath({pack: ['ec'], name: 'Entity'})
             }
         ]);
-        
-        #if debug
-        addMethod(fields, "_debugState", debugExprs, [ ]);
-        #end
 
+        #if debug
+        addMethod(fields, "_debugState", debugExprs, []);
+        #end
     }
 
     public static function build():Array<Field> {
@@ -201,7 +204,7 @@ class InitMacro {
                             case _: throw "Wrong type to inject" + ct;
                         }
                     }
-                case {name: 'new', kind: FFun({ expr: {expr: EBlock(ie)}})}:
+                case {name: 'new', kind: FFun({expr: {expr: EBlock(ie)}})}:
                     ctxExprs = ie;
 
                 case _:
@@ -210,12 +213,10 @@ class InitMacro {
 
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
 
-
         var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
             return fields;
 
-        //        addMethod(fields,"_showDeps", [for(n in initOnce.keys()) macro if ($i{n} == null) trace($v{n} + " " + $i{n})]);
         addCountAndResolveDepsMethod(fields, initOnce);
 
         initExprs.push(macro _countAndResolveDeps(e));
@@ -232,7 +233,7 @@ class InitMacro {
         });
 
         #if debug
-        ctxExprs.push(macro ec.DebugInit.initCheck.listen(_debugState) );
+        ctxExprs.unshift(macro if (@:privateAccess !ec.DebugInit.initCheck.listeners.contains(_debugState)) ec.DebugInit.initCheck.listen(_debugState));
         #end
 
         if (initMethod == null) {
