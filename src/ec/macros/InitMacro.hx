@@ -193,7 +193,7 @@ class InitMacro {
                         switch ct {
                             case TPath({name: typeName, pack: []}):
                                 var isTypedef = switch ct.toType() {
-                                    case TType(_, _): true;
+                                    case TType(_.get()=>{type:TAnonymous(a)}, _): true;
                                     case _: false;
                                 }
                                  initOnce[name] = 
