@@ -21,6 +21,7 @@ class InitMacro {
     static var template = macro class Templ {
         var sources:Array<ec.Entity> = [];
         var _inited:Bool = false;
+        public var _verbose:Bool = false;
 
         public function watch(e) {
             if (_inited)
@@ -95,6 +96,7 @@ class InitMacro {
             if (f.name == name)
                 return;
         var initExprs = [];
+        var debugExprs = [macro if (_inited) return, macro trace(this, [for (e in sources) "e: " + e.name  + " Path: " +  e.getPath()])];
         var totalListeners = Lambda.count(initOnce);
         if (_hasField(Context.getLocalClass().get(), name)) {
             initExprs.push(macro _depsCount += $v{totalListeners});
@@ -127,6 +129,8 @@ class InitMacro {
                 if (_verbose)
                     trace(this, $i{name}, $v{name}, '$_depsCount remains');
             });
+            
+            debugExprs.push(macro trace($v{name}, ": ", $i{name}));
         }
         addMethod(fields, "_countAndResolveDeps", initExprs, [
             {
@@ -136,6 +140,11 @@ class InitMacro {
                 type: TPath({pack: ['ec'], name: 'Entity'})
             }
         ]);
+        
+        #if debug
+        addMethod(fields, "_debugState", debugExprs, [ ]);
+        #end
+
     }
 
     public static function build():Array<Field> {
@@ -160,6 +169,7 @@ class InitMacro {
         }> = new Map();
         var initMethod;
         var initExprs = [];
+        var ctxExprs = [];
 
         for (f in fields) {
             switch f {
@@ -181,13 +191,15 @@ class InitMacro {
                             case _: throw "Wrong type to inject" + ct;
                         }
                     }
+                case {name: 'new', kind: FFun({ expr: {expr: EBlock(ie)}})}:
+                    ctxExprs = ie;
+
                 case _:
             }
         }
 
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
 
-        addField(fields, "_verbose", macro :Bool);
 
         var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
@@ -209,6 +221,10 @@ class InitMacro {
             }
             init();
         });
+
+        #if debug
+        ctxExprs.push(macro ec.DebugInit.initCheck.listen(_debugState) );
+        #end
 
         if (initMethod == null) {
             initMethod = {
