@@ -31,7 +31,7 @@ class InitMacro {
                 return;
             sources.push(e);
             e.onContext.listen(_init);
-            e.dispatchContext(e);
+            entity.dispatchContext(e);
         }
 
         function unsubscribe() {
