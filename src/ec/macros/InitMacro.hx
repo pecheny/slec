@@ -183,15 +183,27 @@ class InitMacro {
                         initMethod = f;
                         initExprs = ie;
                     }
-                case {name: name, kind: FVar(ct), meta: [{name: ":once", params: prms}]}:
+                case {name: name, kind: FVar(ct), meta: [{name: ":once", params: tprms}]}:
                     {
-                        var alias = switch prms {
-                            case [{expr: EConst(CString(alias, _))}]: alias;
-                            case []: null;
-                            case _: throw "Wrong meta";
-                        }
+                        var gen = false;
+
                         switch ct {
-                            case TPath({name: typeName, pack: []}):
+                            case TPath({name: typeName, pack: [], params:prms}):
+                                var tpname = switch prms {
+                                    case []:"";
+                                    case [TPType( TPath({name:n}) )]: n;
+                                    case _: "";
+                                };
+
+                                var alias = switch tprms {
+                                    case [{expr: EConst(CString(alias, _))}]: alias;
+                                    case [{expr: EConst(CIdent("gen")) }]:
+                                         trace(tpname);
+                                         tpname;
+                                    case []: null;
+                                    case _: throw "Wrong meta";
+                                }
+
                                 var isTypedef = switch ct.toType() {
                                     case TType(_.get()=>{type:TAnonymous(a)}, _): true;
                                     case _: false;
