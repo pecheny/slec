@@ -197,9 +197,7 @@ class InitMacro {
 
                                 var alias = switch tprms {
                                     case [{expr: EConst(CString(alias, _))}]: alias;
-                                    case [{expr: EConst(CIdent("gen")) }]:
-                                         trace(tpname);
-                                         tpname;
+                                    case [{expr: EConst(CIdent("gen")) }]: tpname;
                                     case []: null;
                                     case _: throw "Wrong meta";
                                 }
