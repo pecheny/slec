@@ -99,9 +99,25 @@ class InitMacro {
             if (f.name == name)
                 return;
         var initExprs = [];
+        var declare = macro var parent = this.entity;
+        var pathExpr = macro var src = if (sources != null) "" + [for (e in sources) "e: " + e.name + " Path: " + e.getPath()] else "";
+
         var debugExprs = [
+            macro trace("checking on " + entity.name, this, "inited: " + _inited, "filtering by parent: " + e?.name + "."),
             macro if (_inited) return,
-            macro trace(this, $v{Context.getLocalClass().get().name}, [for (e in sources) "e: " + e.name + " Path: " + e.getPath()])
+            declare,
+            macro if (e!=null) while (parent != null) {
+                trace("path: " + parent.name);
+                if (e == parent)
+                    break;
+                if(parent.parent == null) {
+                    trace("not in parent");
+                    return;
+                }
+                parent = parent.parent;
+            },
+            pathExpr,
+            macro trace(this, $v{Context.getLocalClass().get().name}, src)
         ];
         var totalListeners = Lambda.count(initOnce);
         if (_hasField(Context.getLocalClass().get(), name)) {
@@ -152,7 +168,14 @@ class InitMacro {
         ]);
 
         #if debug
-        addMethod(fields, "_debugState", debugExprs, []);
+        addMethod(fields, "_debugState", debugExprs, [
+            {
+                name: "e",
+                opt: false,
+                meta: [],
+                type: TPath({pack: ['ec'], name: 'Entity'})
+            }
+        ]);
         #end
     }
 
