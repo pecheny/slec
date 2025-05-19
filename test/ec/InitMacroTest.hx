@@ -17,6 +17,7 @@ class InitMacroTest extends utest.Test {
         Assert.equals(c1, tester.obj, "Test @:once injection");
         Assert.equals(c2, tester.named, "Test named injection");
     }
+
     public function test_all_deps_with_inheritance() {
         var root = new Entity();
         var c1 = new Obj();
@@ -35,8 +36,8 @@ class InitMacroTest extends utest.Test {
 
         Assert.equals(1, tester.initCalls);
         Assert.equals(c2, tester.other, "Test @:once injection");
-
     }
+
     public function test_all_deps_with_inheritance_reverse_init_order() {
         var root = new Entity();
         var c1 = new Obj();
@@ -53,10 +54,45 @@ class InitMacroTest extends utest.Test {
         Assert.equals(1, tester.initCalls);
         Assert.equals(c2, tester.named, "Test named injection");
     }
+
+    public function test_optional_injection() {
+        var root = new Entity();
+        var c1 = new Obj();
+        var c2 = new Obj("named");
+        root.addComponentByName("Obj_named", c2);
+        var tester = new OptInjTester();
+        root.addChild(tester.entity);
+
+        Assert.equals(1, tester.entity.onContext.asArray().length);
+        Assert.equals(1, tester.initCalls);
+        Assert.equals(null, tester.opt);
+
+        root.addComponent(c1);
+        Assert.equals(1, tester.initCalls);
+        Assert.equals(c1, tester.opt);
+        Assert.equals(0, tester.entity.onContext.asArray().length);
+    }
 }
-class ExtendedINjectionTester extends InjectionTester {
-    @:once("otherNamed")public var other:Obj;
+
+class OptInjTester extends MacroBaseClass {
+    public var entity(default, null):Entity = new Entity();
+    @:onceOpt public var opt:Obj;
+    @:once("named") public var named:Obj;
     public var initCalls = 0;
+
+    public function init() {
+        initCalls++;
+    }
+
+    public function new() {
+        watch(entity);
+    }
+}
+
+class ExtendedINjectionTester extends InjectionTester {
+    @:once("otherNamed") public var other:Obj;
+    public var initCalls = 0;
+
     override public function init() {
         initCalls++;
     }

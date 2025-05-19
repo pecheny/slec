@@ -23,10 +23,12 @@ class InitMacro {
     static var template = macro class Templ {
         var sources:Array<ec.Entity> = [];
         var _inited:Bool = false;
+        var _optionalCount:Int = 0;
+        var _depsCount:Int = 0;
 
         public var _verbose:Bool = false;
 
-        public function watch(e) {
+        public function watch(e:ec.Entity) {
             if (_inited)
                 return;
             sources.push(e);
@@ -36,6 +38,8 @@ class InitMacro {
 
         function unsubscribe() {
             if (sources == null)
+                return;
+            if (_optionalCount > 0 || _depsCount > 0)
                 return;
             for (e in sources)
                 e.onContext.remove(_init);
@@ -119,12 +123,15 @@ class InitMacro {
             pathExpr,
             macro trace(this, $v{Context.getLocalClass().get().name}, src)
         ];
-        var totalListeners = Lambda.count(initOnce);
+        
+        var optListeners = Lambda.count(initOnce, inj -> inj.optional);
+        var reqListeners = Lambda.count(initOnce, inj -> !inj.optional);
         if (_hasField(Context.getLocalClass().get(), name)) {
-            initExprs.push(macro _depsCount += $v{totalListeners});
+            initExprs.push(macro _depsCount += $v{reqListeners});
+            initExprs.push(macro _optionalCount += $v{optListeners});
         } else {
-            addField(fields, "_depsCount", macro :Int, macro 0);
-            initExprs.push(macro _depsCount = $v{totalListeners});
+            initExprs.push(macro _depsCount = $v{reqListeners});
+            initExprs.push(macro _optionalCount = $v{optListeners});
         }
 
         initExprs.push(macro if (e == null) return);
@@ -146,14 +153,16 @@ class InitMacro {
                     $i{name} = e.getComponentUpward($i{injection.type});
                 });
             }
+            
+            var counter = if (injection.optional) macro _optionalCount else macro  _depsCount;
 
             initExprs.push(macro if ($i{name} != null) {
                 if (_verbose && wasNull) {
-                    trace($i{name} + " assigned " + _depsCount);
+                    trace(this + ": " + $v{name} + " assigned value: " + $i{name}  + ",  counter: "   + _depsCount);
                 }
-                _depsCount--;
+                $counter--;
                 if (_verbose)
-                    trace(this, $i{name}, $v{name}, '$_depsCount remains');
+                    trace(this + ": " +  $i{name}  + " " +  $v{name}  + " " +  '$_depsCount remains');
             });
 
             debugExprs.push(macro trace("    " + $v{name} + ": '" + $i{name} + "'"));
@@ -199,17 +208,8 @@ class InitMacro {
         var initExprs = [];
         var ctxExprs = [];
 
-        for (f in fields) {
-            switch f {
-                case {name: '_init', kind: FFun({args: [{name: en}], expr: {expr: EBlock(ie)}})}:
-                    {
-                        initMethod = f;
-                        initExprs = ie;
-                    }
-                case {name: name, kind: FVar(ct), meta: [{name: ":once", params: tprms}]}:
-                    {
+        function regInjection(name, ct, tprms:Array<Expr>, optional) {
                         var gen = false;
-
                         switch ct {
                             case TPath({name: typeName, pack: [], params:prms}):
                                 var tpname = switch prms {
@@ -231,12 +231,25 @@ class InitMacro {
                                 }
                                  initOnce[name] = 
                                     if (isTypedef)
-                                        {type: typeToString(ct.toType()), alias: alias, isTypedef:true};
+                                        {type: typeToString(ct.toType()), alias: alias, isTypedef:true, optional:optional};
                                     else
-                                        {type: typeName, alias: alias, isTypedef:false};
+                                        {type: typeName, alias: alias, isTypedef:false, optional:optional};
                             case _: throw "Wrong type to inject" + ct;
                         }
                     }
+        for (f in fields) {
+            switch f {
+                case {name: '_init', kind: FFun({args: [{name: en}], expr: {expr: EBlock(ie)}})}:
+                    {
+                        initMethod = f;
+                        initExprs = ie;
+                    }
+                case {name: name, kind: FVar(ct), meta: [{name: ":once", params: tprms}]}:
+                    regInjection(name, ct, tprms, false);
+                
+                case {name: name, kind: FVar(ct), meta: [{name: ":onceOpt", params: tprms}]}:
+                    regInjection(name, ct, tprms, true);
+    
                 case {name: 'new', kind: FFun({expr: {expr: EBlock(ie)}})}:
                     ctxExprs = ie;
 
@@ -254,9 +267,9 @@ class InitMacro {
 
         initExprs.push(macro _countAndResolveDeps(e));
         initExprs.push(macro if (_depsCount == 0) {
+            unsubscribe(); 
             if (_inited)
                 return;
-            unsubscribe();
             _inited = true;
             if (_verbose) {
                 trace(this, "_init done, calling init()\n\n");
@@ -306,4 +319,4 @@ class InitMacro {
     }
 }
 
-typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool}
+typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool, optional:Bool}
