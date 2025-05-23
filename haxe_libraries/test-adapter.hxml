@@ -1,0 +1,4 @@
+# @install: lix --silent download "gh://github.com/vshaxe/haxe-test-adapter#114421daf1f128751bd3b40084553541b6de96c3" into haxe-test-adapter/3.0.1/github/114421daf1f128751bd3b40084553541b6de96c3
+-lib json2object
+-cp ${HAXE_LIBCACHE}/haxe-test-adapter/3.0.1/github/114421daf1f128751bd3b40084553541b6de96c3/test-adapter
+-D test-adapter=3.0.1
