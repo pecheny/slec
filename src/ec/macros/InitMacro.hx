@@ -244,10 +244,10 @@ class InitMacro {
                         initMethod = f;
                         initExprs = ie;
                     }
-                case {name: name, kind: FVar(ct), meta: [{name: ":once", params: tprms}]}:
+                case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":once", params: tprms}]}:
                     regInjection(name, ct, tprms, false);
                 
-                case {name: name, kind: FVar(ct), meta: [{name: ":onceOpt", params: tprms}]}:
+                case {name: name, kind: FVar(ct) | FProp(_, _, ct) , meta: [{name: ":onceOpt", params: tprms}]}:
                     regInjection(name, ct, tprms, true);
     
                 case {name: 'new', kind: FFun({expr: {expr: EBlock(ie)}})}:

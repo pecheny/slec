@@ -72,13 +72,25 @@ class InitMacroTest extends utest.Test {
         Assert.equals(c1, tester.opt);
         Assert.equals(0, tester.entity.onContext.asArray().length);
     }
+    
+    public function test_setter() {
+        var root = new Entity();
+        var c1 = new Obj();
+        var tester = new OptInjTester();
+        root.addChild(tester.entity);
+        root.addComponent(c1);
+        Assert.equals(1, tester.setCalls);
+        Assert.equals(c1, tester.setter);
+    }
 }
 
 class OptInjTester extends MacroBaseClass {
     public var entity(default, null):Entity = new Entity();
     @:onceOpt public var opt:Obj;
+    @:onceOpt public var setter (default, set):Obj;
     @:once("named") public var named:Obj;
     public var initCalls = 0;
+    public var setCalls = 0;
 
     public function init() {
         initCalls++;
@@ -86,6 +98,13 @@ class OptInjTester extends MacroBaseClass {
 
     public function new() {
         watch(entity);
+    }
+    
+    
+
+    function set_setter(value:Obj):Obj {
+        if (value != null) setCalls++;
+        return setter = value;
     }
 }
 
