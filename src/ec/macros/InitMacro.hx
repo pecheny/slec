@@ -48,7 +48,6 @@ class InitMacro {
 
         public function init() {}
 
-        function _init(e:ec.Entity) {}
     }
 
     static function hasField(name) {
