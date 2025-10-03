@@ -25,6 +25,7 @@ class InitMacro {
         var _inited:Bool = false;
         var _optionalCount:Int = 0;
         var _depsCount:Int = 0;
+        var _watch = false;
 
         public var _verbose:Bool = false;
 
@@ -39,7 +40,7 @@ class InitMacro {
         function unsubscribe() {
             if (sources == null)
                 return;
-            if (_optionalCount > 0 || _depsCount > 0)
+            if (_optionalCount > 0 || _depsCount > 0 || _watch)
                 return;
             for (e in sources)
                 e.onContext.remove(_init);
@@ -122,9 +123,9 @@ class InitMacro {
             pathExpr,
             macro trace(this, $v{Context.getLocalClass().get().name}, src)
         ];
-        
-        var optListeners = Lambda.count(initOnce, inj -> inj.optional);
-        var reqListeners = Lambda.count(initOnce, inj -> !inj.optional);
+
+        var optListeners = Lambda.count(initOnce, inj -> inj.injection == optional);
+        var reqListeners = Lambda.count(initOnce, inj -> inj.injection == required || inj.injection == watch);
         if (_hasField(Context.getLocalClass().get(), name)) {
             initExprs.push(macro _depsCount += $v{reqListeners});
             initExprs.push(macro _optionalCount += $v{optListeners});
@@ -144,16 +145,24 @@ class InitMacro {
                 var alias = injection.type;
                 if (injection.alias != null)
                     alias += "_" + injection.alias;
-                initExprs.push(macro if ($i{name} == null) {
-                    $i{name} = e.getComponentByNameUpward($v{alias});
-                });
+                if (injection.injection != watch) {
+                    initExprs.push(macro if ($i{name} == null) {
+                        $i{name} = e.getComponentByNameUpward($v{alias});
+                    });
+                } else {
+                    initExprs.push(macro $i{name} = e.getComponentByNameUpward($v{alias}));
+                }
             } else {
-                initExprs.push(macro if ($i{name} == null) {
-                    $i{name} = e.getComponentUpward($i{injection.type});
-                });
+                if (injection.injection != watch) {
+                    initExprs.push(macro if ($i{name} == null) {
+                        $i{name} = e.getComponentUpward($i{injection.type});
+                    });
+                } else {
+                    initExprs.push(macro $i{name} = e.getComponentUpward($i{injection.type}));
+                }
             }
-            
-            var counter = if (injection.optional) macro _optionalCount else macro  _depsCount;
+
+            var counter = if (injection.injection == optional) macro _optionalCount else macro _depsCount;
 
             initExprs.push(macro if ($i{name} != null) {
                 if (_verbose && wasNull) {
@@ -206,8 +215,10 @@ class InitMacro {
         var initMethod;
         var initExprs = [];
         var ctxExprs = [];
+        var _watch = false;
 
-        function regInjection(name, ct, tprms:Array<Expr>, optional) {
+
+        function regInjection(name, ct, tprms:Array<Expr>, injection) {
                         var gen = false;
                         switch ct {
                             case TPath({name: typeName, pack: [], params:prms}):
@@ -230,9 +241,9 @@ class InitMacro {
                                 }
                                  initOnce[name] = 
                                     if (isTypedef)
-                                        {type: typeToString(ct.toType()), alias: alias, isTypedef:true, optional:optional};
+                                        {type: typeToString(ct.toType()), alias: alias, isTypedef:true, injection:injection};
                                     else
-                                        {type: typeName, alias: alias, isTypedef:false, optional:optional};
+                                        {type: typeName, alias: alias, isTypedef:false, injection:injection};
                             case _: throw "Wrong type to inject" + ct;
                         }
                     }
@@ -244,18 +255,20 @@ class InitMacro {
                         initExprs = ie;
                     }
                 case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":once", params: tprms}]}:
-                    regInjection(name, ct, tprms, false);
-                
-                case {name: name, kind: FVar(ct) | FProp(_, _, ct) , meta: [{name: ":onceOpt", params: tprms}]}:
-                    regInjection(name, ct, tprms, true);
-    
+                    regInjection(name, ct, tprms, required);
+                case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":onceOpt", params: tprms}]}:
+                    regInjection(name, ct, tprms, optional);
+                case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":watch", params: tprms}]}:
+                    _watch = true;
+                    regInjection(name, ct, tprms, watch);
+
                 case {name: 'new', kind: FFun({expr: {expr: EBlock(ie)}})}:
                     ctxExprs = ie;
 
                 case _:
             }
         }
-
+    
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
 
         var totalListeners = Lambda.count(initOnce);
@@ -266,7 +279,7 @@ class InitMacro {
 
         initExprs.push(macro _countAndResolveDeps(e));
         initExprs.push(macro if (_depsCount == 0) {
-            unsubscribe(); 
+            unsubscribe();
             if (_inited)
                 return;
             _inited = true;
@@ -276,6 +289,9 @@ class InitMacro {
             }
             init();
         });
+        
+        if(_watch)
+            ctxExprs.unshift(macro _watch = true);
 
         #if debug
         ctxExprs.unshift(macro if (@:privateAccess !ec.DebugInit.initCheck.listeners.contains(_debugState)) ec.DebugInit.initCheck.listen(_debugState));
@@ -318,4 +334,13 @@ class InitMacro {
     }
 }
 
-typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool, optional:Bool}
+enum abstract InjectionType(Int) {
+    // wait for resolving, unsubscribe from changes, unblock init() call
+    var required;
+    // doesnt block init call, unsubscribe after resolving or never
+    var optional;
+    // unblock init call after first resolve, never unsubscibe, can became null again
+    var watch;
+}
+
+typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool, injection:InjectionType}
