@@ -48,7 +48,6 @@ class InitMacro {
         }
 
         public function init() {}
-
     }
 
     static function hasField(name) {
@@ -110,11 +109,11 @@ class InitMacro {
             macro trace("checking on " + entity.name, this, "inited: " + _inited, "filtering by parent: " + e?.name + "."),
             macro if (_inited) return,
             declare,
-            macro if (e!=null) while (parent != null) {
+            macro if (e != null) while (parent != null) {
                 trace("path: " + parent.name);
                 if (e == parent)
                     break;
-                if(parent.parent == null) {
+                if (parent.parent == null) {
                     trace("not in parent");
                     return;
                 }
@@ -166,11 +165,11 @@ class InitMacro {
 
             initExprs.push(macro if ($i{name} != null) {
                 if (_verbose && wasNull) {
-                    trace(this + ": " + $v{name} + " assigned value: " + $i{name}  + ",  counter: "   + _depsCount);
+                    trace(this + ": " + $v{name} + " assigned value: " + $i{name} + ",  counter: " + _depsCount);
                 }
                 $counter--;
                 if (_verbose)
-                    trace(this + ": " +  $i{name}  + " " +  $v{name}  + " " +  '$_depsCount remains');
+                    trace(this + ": " + $i{name} + " " + $v{name} + " " + '$_depsCount remains');
             });
 
             debugExprs.push(macro trace("    " + $v{name} + ": '" + $i{name} + "'"));
@@ -217,36 +216,42 @@ class InitMacro {
         var ctxExprs = [];
         var _watch = false;
 
-
         function regInjection(name, ct, tprms:Array<Expr>, injection) {
-                        var gen = false;
-                        switch ct {
-                            case TPath({name: typeName, pack: [], params:prms}):
-                                var tpname = switch prms {
-                                    case []:"";
-                                    case [TPType( TPath({name:n}) )]: n;
-                                    case _: "";
-                                };
+            var gen = false;
+            switch ct {
+                case TPath({name: typeName, pack: [], params: prms}):
+                    var tpname = switch prms {
+                        case []: "";
+                        case [TPType(TPath({name: n}))]: n;
+                        case _: "";
+                    };
 
-                                var alias = switch tprms {
-                                    case [{expr: EConst(CString(alias, _))}]: alias;
-                                    case [{expr: EConst(CIdent("gen")) }]: tpname;
-                                    case []: null;
-                                    case _: throw "Wrong meta";
-                                }
-
-                                var isTypedef = switch ct.toType() {
-                                    case TType(_.get()=>{type:TAnonymous(a)}, _): true;
-                                    case _: false;
-                                }
-                                 initOnce[name] = 
-                                    if (isTypedef)
-                                        {type: typeToString(ct.toType()), alias: alias, isTypedef:true, injection:injection};
-                                    else
-                                        {type: typeName, alias: alias, isTypedef:false, injection:injection};
-                            case _: throw "Wrong type to inject" + ct;
-                        }
+                    var alias = switch tprms {
+                        case [{expr: EConst(CString(alias, _))}]: alias;
+                        case [{expr: EConst(CIdent("gen"))}]: tpname;
+                        case []: null;
+                        case _: throw "Wrong meta";
                     }
+
+                    var isTypedef = switch ct.toType() {
+                        case TType(_.get() => {type: TAnonymous(a)}, _): true;
+                        case _: false;
+                    }
+                    initOnce[name] = if (isTypedef) {
+                        type: typeToString(ct.toType()),
+                        alias: alias,
+                        isTypedef: true,
+                        injection: injection
+                    }; else {
+                        type: typeName,
+                        alias: alias,
+                        isTypedef: false,
+                        injection: injection
+                    };
+                case _:
+                    throw "Wrong type to inject" + ct;
+            }
+        }
         for (f in fields) {
             switch f {
                 case {name: '_init', kind: FFun({args: [{name: en}], expr: {expr: EBlock(ie)}})}:
@@ -268,7 +273,7 @@ class InitMacro {
                 case _:
             }
         }
-    
+
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
 
         var totalListeners = Lambda.count(initOnce);
@@ -289,8 +294,8 @@ class InitMacro {
             }
             init();
         });
-        
-        if(_watch)
+
+        if (_watch)
             ctxExprs.unshift(macro _watch = true);
 
         #if debug
