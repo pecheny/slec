@@ -275,6 +275,27 @@ class InitMacro {
         }
 
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
+        
+        if (initMethod == null) {
+            initMethod = {
+                access: _hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
+                name: '_init',
+                kind: FFun({
+                    args: [
+                        {
+                            name: "e",
+                            opt: false,
+                            meta: [],
+                            type: TPath({pack: ['ec'], name: 'Entity'})
+                        }
+                    ],
+                    expr: {expr: EBlock(initExprs), pos: pos},
+                    ret: null
+                }),
+                pos: pos
+            };
+            fields.push(initMethod);
+        }
 
         var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
@@ -301,28 +322,6 @@ class InitMacro {
         #if debug
         ctxExprs.unshift(macro if (@:privateAccess !ec.DebugInit.initCheck.listeners.contains(_debugState)) ec.DebugInit.initCheck.listen(_debugState));
         #end
-
-        if (initMethod == null) {
-            initMethod = {
-                access: _hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
-                name: '_init',
-                kind: FFun({
-                    args: [
-                        {
-                            name: "e",
-                            opt: false,
-                            meta: [],
-                            type: TPath({pack: ['ec'], name: 'Entity'})
-                        }
-                    ],
-                    expr: {expr: EBlock(initExprs), pos: pos},
-                    ret: null
-                }),
-                pos: pos
-            };
-            fields.push(initMethod);
-        }
-
         return fields;
     }
     #end
