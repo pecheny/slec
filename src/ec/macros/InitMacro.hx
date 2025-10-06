@@ -274,9 +274,8 @@ class InitMacro {
             }
         }
 
-        initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
-        
-        if (initMethod == null) {
+        var totalListeners = Lambda.count(initOnce);
+        if (initMethod == null && (totalListeners > 0 || !hasField("_init"))) {
             initMethod = {
                 access: _hasField(Context.getLocalClass().get(), "_init") ? [AOverride] : [],
                 name: '_init',
@@ -297,10 +296,10 @@ class InitMacro {
             fields.push(initMethod);
         }
 
-        var totalListeners = Lambda.count(initOnce);
         if (totalListeners == 0)
             return fields;
 
+        initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
         addCountAndResolveDepsMethod(fields, initOnce);
 
         initExprs.push(macro _countAndResolveDeps(e));
