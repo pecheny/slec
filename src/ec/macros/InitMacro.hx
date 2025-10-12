@@ -25,7 +25,7 @@ class InitMacro {
         var _inited:Bool = false;
         var _optionalCount:Int = 0;
         var _depsCount:Int = 0;
-        var _watch = false;
+        var _watch:Bool = false;
 
         public var _verbose:Bool = false;
 
@@ -252,6 +252,7 @@ class InitMacro {
                     throw "Wrong type to inject" + ct;
             }
         }
+        var _watchField = null;
         for (f in fields) {
             switch f {
                 case {name: '_init', kind: FFun({args: [{name: en}], expr: {expr: EBlock(ie)}})}:
@@ -266,10 +267,10 @@ class InitMacro {
                 case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":watch", params: tprms}]}:
                     _watch = true;
                     regInjection(name, ct, tprms, watch);
-
                 case {name: 'new', kind: FFun({expr: {expr: EBlock(ie)}})}:
                     ctxExprs = ie;
-
+                case {name:'_watch', kind:FVar(t, e)}:
+                    _watchField = f;
                 case _:
             }
         }
@@ -317,7 +318,7 @@ class InitMacro {
         });
 
         if (_watch)
-            ctxExprs.unshift(macro _watch = true);
+            _watchField.kind = FVar(macro:Bool, macro true);
 
         #if debug
         ctxExprs.unshift(macro if (@:privateAccess !ec.DebugInit.initCheck.listeners.contains(_debugState)) ec.DebugInit.initCheck.listen(_debugState));
