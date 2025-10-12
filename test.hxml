@@ -1,4 +1,6 @@
 test-common.hxml
 --hl export/run.hl
 --cmd hl export/run.hl
+# -D dump=pretty
+# -D UTEST_PATTERN=test_watch_injection
 # --js test.js
