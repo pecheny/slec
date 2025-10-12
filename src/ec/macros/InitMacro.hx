@@ -303,6 +303,8 @@ class InitMacro {
         addCountAndResolveDepsMethod(fields, initOnce);
 
         initExprs.resize(0);
+        if(_watch)
+            initExprs.unshift(macro e = this.entity);
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
         initExprs.push(macro _countAndResolveDeps(e));
         initExprs.push(macro if (_depsCount == 0) {
