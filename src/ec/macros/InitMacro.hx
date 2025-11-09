@@ -25,7 +25,7 @@ class InitMacro {
         var _inited:Bool = false;
         var _optionalCount:Int = 0;
         var _depsCount:Int = 0;
-        var _watch:Bool = false;
+        // var _watch:Bool = false;
 
         public var _verbose:Bool = false;
 
@@ -33,14 +33,23 @@ class InitMacro {
             if (_inited)
                 return;
             sources.push(e);
-            e.onContext.listen(_init);
+            // if (_watch)
+            //     e.onContext.listen(checkAll);
+            // else
+                e.onContext.listen(_init);
             e.dispatchContext(e);
         }
+
+        // function checkAll(_) {
+        //     for (e in sources)
+        //         _init(e);
+        // }
 
         function unsubscribe() {
             if (sources == null)
                 return;
-            if (_optionalCount > 0 || _depsCount > 0 || _watch)
+            if (_optionalCount > 0 || _depsCount > 0 )
+            // if (_optionalCount > 0 || _depsCount > 0 || _watch)
                 return;
             for (e in sources)
                 e.onContext.remove(_init);
@@ -124,7 +133,8 @@ class InitMacro {
         ];
 
         var optListeners = Lambda.count(initOnce, inj -> inj.injection == optional);
-        var reqListeners = Lambda.count(initOnce, inj -> inj.injection == required || inj.injection == watch);
+        var reqListeners = Lambda.count(initOnce, inj -> inj.injection == required);
+        // var reqListeners = Lambda.count(initOnce, inj -> inj.injection == required || inj.injection == watch);
         if (_hasField(Context.getLocalClass().get(), name)) {
             initExprs.push(macro _depsCount += $v{reqListeners});
             initExprs.push(macro _optionalCount += $v{optListeners});
@@ -144,21 +154,21 @@ class InitMacro {
                 var alias = injection.type;
                 if (injection.alias != null)
                     alias += "_" + injection.alias;
-                if (injection.injection != watch) {
+                // if (injection.injection != watch) {
                     initExprs.push(macro if ($i{name} == null) {
                         $i{name} = e.getComponentByNameUpward($v{alias});
                     });
-                } else {
-                    initExprs.push(macro $i{name} = e.getComponentByNameUpward($v{alias}));
-                }
+                // } else {
+                //     initExprs.push(macro $i{name} = e.getComponentByNameUpward($v{alias}));
+                // }
             } else {
-                if (injection.injection != watch) {
+                // if (injection.injection != watch) {
                     initExprs.push(macro if ($i{name} == null) {
                         $i{name} = e.getComponentUpward($i{injection.type});
                     });
-                } else {
-                    initExprs.push(macro $i{name} = e.getComponentUpward($i{injection.type}));
-                }
+                // } else {
+                //     initExprs.push(macro $i{name} = e.getComponentUpward($i{injection.type}));
+                // }
             }
 
             var counter = if (injection.injection == optional) macro _optionalCount else macro _depsCount;
@@ -214,7 +224,7 @@ class InitMacro {
         var initMethod;
         var initExprs = [];
         var ctxExprs = [];
-        var _watch = false;
+        // var _watch = false;
 
         function regInjection(name, ct, tprms:Array<Expr>, injection) {
             var gen = false;
@@ -252,7 +262,7 @@ class InitMacro {
                     throw "Wrong type to inject" + ct;
             }
         }
-        var _watchField = null;
+        // var _watchField = null;
         for (f in fields) {
             switch f {
                 case {name: '_init', kind: FFun({args: [{name: en}], expr: {expr: EBlock(ie)}})}:
@@ -264,13 +274,13 @@ class InitMacro {
                     regInjection(name, ct, tprms, required);
                 case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":onceOpt", params: tprms}]}:
                     regInjection(name, ct, tprms, optional);
-                case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":watch", params: tprms}]}:
-                    _watch = true;
-                    regInjection(name, ct, tprms, watch);
+                // case {name: name, kind: FVar(ct) | FProp(_, _, ct), meta: [{name: ":watch", params: tprms}]}:
+                //     _watch = true;
+                //     regInjection(name, ct, tprms, watch);
                 case {name: 'new', kind: FFun({expr: {expr: EBlock(ie)}})}:
                     ctxExprs = ie;
-                case {name:'_watch', kind:FVar(t, e)}:
-                    _watchField = f;
+                // case {name:'_watch', kind:FVar(t, e)}:
+                //     _watchField = f;
                 case _:
             }
         }
@@ -303,8 +313,10 @@ class InitMacro {
         addCountAndResolveDepsMethod(fields, initOnce);
 
         initExprs.resize(0);
-        if(_watch)
-            initExprs.unshift(macro e = this.entity);
+        // if(_watch) this is unnecessary, since cant work with multible sources.
+        // The idea to work out is to make initAll(). At the beginning of the method, put null assignment for all @:watch fields,
+        // then iterate over sources and call _init() for each, skipping @:watch which is not null same as other deps.
+        //     initExprs.unshift(macro e = this.entity);
         initExprs.unshift(macro if (_verbose) trace("init called " + this, e, e?.getPath() /*, "\n",haxe.callstack.tostring(haxe.callstack.callstack ())*/));
         initExprs.push(macro _countAndResolveDeps(e));
         initExprs.push(macro if (_depsCount == 0) {
@@ -319,8 +331,8 @@ class InitMacro {
             init();
         });
 
-        if (_watch)
-            _watchField.kind = FVar(macro:Bool, macro true);
+        // if (_watch)
+        //     _watchField.kind = FVar(macro:Bool, macro true);
 
         #if debug
         ctxExprs.unshift(macro if (@:privateAccess !ec.DebugInit.initCheck.listeners.contains(_debugState)) ec.DebugInit.initCheck.listen(_debugState));
@@ -347,7 +359,7 @@ enum abstract InjectionType(Int) {
     // doesnt block init call, unsubscribe after resolving or never
     var optional;
     // unblock init call after first resolve, never unsubscibe, can became null again
-    var watch;
+    // var watch;
 }
 
 typedef InjDescr = {type:String, ?alias:String, isTypedef:Bool, injection:InjectionType}

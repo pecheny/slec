@@ -73,24 +73,24 @@ class InitMacroTest extends utest.Test {
         Assert.equals(0, tester.entity.onContext.asArray().length);
     }
 
-    public function test_watch_injection() {
-        var root = new Entity();
-        var c1 = new Obj();
-        root.addComponent(c1);
-        var proxy = new Entity();
-        root.addChild(proxy);
-        var tester = new WatchInjTester();
-        tester.watch(proxy);
+    // public function test_watch_injection() {
+    //     var root = new Entity();
+    //     var c1 = new Obj();
+    //     root.addComponent(c1);
+    //     var proxy = new Entity();
+    //     root.addChild(proxy);
+    //     var tester = new WatchInjTester();
+    //     tester.watch(proxy);
 
-        Assert.equals(c1, tester.obj);
-        Assert.equals(1, tester.initCount);
+    //     Assert.equals(c1, tester.obj);
+    //     Assert.equals(1, tester.initCount);
 
-        var c2 = new Obj("named");
-        proxy.addComponent(c2);
+    //     var c2 = new Obj("named");
+    //     proxy.addComponent(c2);
         
-        Assert.equals(c2, tester.obj);
-        Assert.equals(1, tester.initCount);
-    }
+    //     Assert.equals(c2, tester.obj);
+    //     Assert.equals(1, tester.initCount);
+    // }
 
     public function test_setter() {
         var root = new Entity();
