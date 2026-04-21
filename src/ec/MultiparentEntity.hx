@@ -5,7 +5,7 @@ class MultiparentEntity extends Entity {
 
     public function addParent(e:Entity) {
         parents.push(e);
-        e.onContext.listen(e -> onContext.dispatch(e));
+        e.onContext.listen(e -> dispatchContext(e));
     }
 
     override function getComponentUpward<T>(cl:Class<T>):T {
